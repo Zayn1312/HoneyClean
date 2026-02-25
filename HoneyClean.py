@@ -180,7 +180,7 @@ ERROR_CLR = "#ef4444"
 TEXT = "#e8e8ed"
 TEXT_SEC = "#8a8a9a"
 TEXT_TER = "#55556a"
-BORDER = "#ffffff10"
+BORDER = "#1f1f24"
 BORDER_VISIBLE = "#2a2a30"
 FONT = "Segoe UI"
 
@@ -943,7 +943,10 @@ class GlowScrollbar(tk.Canvas):
     def show(self):
         if not self._visible:
             self._visible = True
-            self.lift()
+            try:
+                self.tk.call('raise', self._w)
+            except Exception:
+                pass
             self._update_thumb()
 
     def hide(self):
