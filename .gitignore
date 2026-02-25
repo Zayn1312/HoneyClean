@@ -4,20 +4,20 @@ __pycache__/
 *$py.class
 *.so
 *.egg-info/
-dist/
-build/
-*.spec
 *.egg
 .eggs/
 
-# PyInstaller
-*.manifest
+# Build artifacts
+dist/
+build/
 *.spec
+*.manifest
 
 # Virtual environments
 venv/
 .venv/
 env/
+.env/
 
 # IDE
 .vscode/
@@ -25,14 +25,25 @@ env/
 *.swp
 *.swo
 *~
+.project
+.settings/
 
 # OS
 Thumbs.db
 Desktop.ini
 .DS_Store
+ehthumbs.db
 
 # Logs
 *.log
 
 # Config (user-specific)
 config.json
+
+# AI Models (downloaded at runtime)
+.u2net/
+
+# Temporary files
+*.tmp
+*.bak
+*.orig

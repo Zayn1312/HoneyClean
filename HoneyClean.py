@@ -26,7 +26,7 @@ if sys.platform == "win32":
 import io as _io
 sys.stderr = _io.StringIO()
 
-VERSION = "3.0"
+VERSION = "3.2"
 
 # ── i18n System ──────────────────────────────────────────────────
 STRINGS = {"en": {}, "de": {}, "fr": {}, "es": {}, "zh": {}}
@@ -164,6 +164,68 @@ _tr("dark", "Dark", "Dunkel", "Sombre", "Oscuro", "\u6df1\u8272")
 _tr("browse", "Browse", "Durchsuchen", "Parcourir", "Explorar", "\u6d4f\u89c8")
 _tr("settings_saved", "Settings saved", "Einstellungen gespeichert", "Param\u00e8tres enregistr\u00e9s", "Ajustes guardados", "\u8bbe\u7f6e\u5df2\u4fdd\u5b58")
 _tr("images_processed", "images processed", "Bilder verarbeitet", "images trait\u00e9es", "im\u00e1genes procesadas", "\u5f20\u56fe\u7247\u5df2\u5904\u7406")
+_tr("status_opening_folder", "Opening output folder...", "\u00d6ffne Ausgabeordner...", "Ouverture du dossier de sortie...", "Abriendo carpeta de salida...", "\u6b63\u5728\u6253\u5f00\u8f93\u51fa\u6587\u4ef6\u5939...")
+
+# Model display names
+_tr("model_auto_name", "Auto (Recommended)", "Auto (Empfohlen)", "Auto (Recommand\u00e9)", "Auto (Recomendado)", "\u81ea\u52a8\uff08\u63a8\u8350\uff09")
+_tr("model_auto_desc", "Automatically selects the best available model.", "W\u00e4hlt automatisch das beste verf\u00fcgbare Modell.", "S\u00e9lectionne automatiquement le meilleur mod\u00e8le disponible.", "Selecciona autom\u00e1ticamente el mejor modelo disponible.", "\u81ea\u52a8\u9009\u62e9\u6700\u4f73\u53ef\u7528\u6a21\u578b\u3002")
+_tr("model_birefnet_general_name", "BiRefNet General \u2014 Best Quality", "BiRefNet General \u2014 Beste Qualit\u00e4t", "BiRefNet General \u2014 Meilleure qualit\u00e9", "BiRefNet General \u2014 Mejor calidad", "BiRefNet\u901a\u7528 \u2014 \u6700\u4f73\u8d28\u91cf")
+_tr("model_birefnet_general_desc", "Top accuracy. Great for hair, fur and complex edges.", "H\u00f6chste Genauigkeit. Ideal f\u00fcr Haare, Fell und komplexe Kanten.", "Pr\u00e9cision maximale. Id\u00e9al pour cheveux, fourrure et bords complexes.", "M\u00e1xima precisi\u00f3n. Ideal para cabello, pelaje y bordes complejos.", "\u6700\u9ad8\u7cbe\u5ea6\u3002\u9002\u5408\u5934\u53d1\u3001\u6bdb\u53d1\u548c\u590d\u6742\u8fb9\u7f18\u3002")
+_tr("model_birefnet_massive_name", "BiRefNet Massive \u2014 Maximum Detail", "BiRefNet Massive \u2014 Maximales Detail", "BiRefNet Massive \u2014 D\u00e9tail maximum", "BiRefNet Massive \u2014 Detalle m\u00e1ximo", "BiRefNet\u5927\u578b \u2014 \u6700\u5927\u7ec6\u8282")
+_tr("model_birefnet_massive_desc", "Largest model, slowest but most precise. Needs more VRAM.", "Gr\u00f6\u00dftes Modell, langsamer aber am pr\u00e4zisesten. Braucht mehr VRAM.", "Plus grand mod\u00e8le, plus lent mais plus pr\u00e9cis. N\u00e9cessite plus de VRAM.", "Modelo m\u00e1s grande, m\u00e1s lento pero m\u00e1s preciso. Necesita m\u00e1s VRAM.", "\u6700\u5927\u6a21\u578b\uff0c\u6700\u6162\u4f46\u6700\u7cbe\u786e\u3002\u9700\u8981\u66f4\u591a\u663e\u5b58\u3002")
+_tr("model_birefnet_portrait_name", "BiRefNet Portrait \u2014 People Focus", "BiRefNet Portr\u00e4t \u2014 Personenfokus", "BiRefNet Portrait \u2014 Focus personnes", "BiRefNet Retrato \u2014 Enfoque personas", "BiRefNet\u8096\u50cf \u2014 \u4eba\u7269\u805a\u7126")
+_tr("model_birefnet_portrait_desc", "Optimized for portraits and people photography.", "Optimiert f\u00fcr Portr\u00e4ts und Personenfotografie.", "Optimis\u00e9 pour les portraits et la photographie de personnes.", "Optimizado para retratos y fotograf\u00eda de personas.", "\u9488\u5bf9\u8096\u50cf\u548c\u4eba\u7269\u6444\u5f71\u4f18\u5316\u3002")
+_tr("model_birefnet_general_lite_name", "BiRefNet Lite \u2014 Fast Quality", "BiRefNet Lite \u2014 Schnelle Qualit\u00e4t", "BiRefNet Lite \u2014 Qualit\u00e9 rapide", "BiRefNet Lite \u2014 Calidad r\u00e1pida", "BiRefNet\u8f7b\u91cf \u2014 \u5feb\u901f\u8d28\u91cf")
+_tr("model_birefnet_general_lite_desc", "Good quality with faster processing. Less VRAM needed.", "Gute Qualit\u00e4t mit schnellerer Verarbeitung. Weniger VRAM ben\u00f6tigt.", "Bonne qualit\u00e9 avec traitement plus rapide. Moins de VRAM n\u00e9cessaire.", "Buena calidad con procesamiento m\u00e1s r\u00e1pido. Menos VRAM necesaria.", "\u826f\u597d\u8d28\u91cf\u4e14\u5904\u7406\u66f4\u5feb\u3002\u9700\u8981\u66f4\u5c11\u663e\u5b58\u3002")
+_tr("model_isnet_general_name", "ISNet General \u2014 Reliable Classic", "ISNet General \u2014 Zuverl\u00e4ssiger Klassiker", "ISNet General \u2014 Classique fiable", "ISNet General \u2014 Cl\u00e1sico confiable", "ISNet\u901a\u7528 \u2014 \u53ef\u9760\u7ecf\u5178")
+_tr("model_isnet_general_desc", "Well-tested general purpose model. Good all-rounder.", "Bew\u00e4hrtes Allzweckmodell. Guter Allrounder.", "Mod\u00e8le polyvalent bien test\u00e9. Bon g\u00e9n\u00e9raliste.", "Modelo de prop\u00f3sito general bien probado. Buen todoterreno.", "\u7ecf\u8fc7\u5145\u5206\u6d4b\u8bd5\u7684\u901a\u7528\u6a21\u578b\u3002\u5168\u80fd\u578b\u9009\u624b\u3002")
+_tr("model_u2net_name", "U2Net \u2014 Standard", "U2Net \u2014 Standard", "U2Net \u2014 Standard", "U2Net \u2014 Est\u00e1ndar", "U2Net \u2014 \u6807\u51c6")
+_tr("model_u2net_desc", "Classic background removal model. Fast and reliable.", "Klassisches Hintergrundentfernungsmodell. Schnell und zuverl\u00e4ssig.", "Mod\u00e8le classique de suppression d'arri\u00e8re-plan. Rapide et fiable.", "Modelo cl\u00e1sico de eliminaci\u00f3n de fondo. R\u00e1pido y confiable.", "\u7ecf\u5178\u80cc\u666f\u79fb\u9664\u6a21\u578b\u3002\u5feb\u901f\u53ef\u9760\u3002")
+_tr("model_isnet_anime_name", "ISNet Anime \u2014 Anime & Illustration", "ISNet Anime \u2014 Anime & Illustration", "ISNet Anime \u2014 Anime & Illustration", "ISNet Anime \u2014 Anime e ilustraci\u00f3n", "ISNet\u52a8\u6f2b \u2014 \u52a8\u6f2b\u548c\u63d2\u753b")
+_tr("model_isnet_anime_desc", "Specialized for anime and manga art.", "Spezialisiert auf Anime- und Manga-Kunst.", "Sp\u00e9cialis\u00e9 pour l'art anime et manga.", "Especializado en arte anime y manga.", "\u4e13\u4e3a\u52a8\u6f2b\u548c\u6f2b\u753b\u827a\u672f\u8bbe\u8ba1\u3002")
+_tr("model_u2net_human_name", "U2Net Human \u2014 People Only", "U2Net Human \u2014 Nur Personen", "U2Net Humain \u2014 Personnes uniquement", "U2Net Humano \u2014 Solo personas", "U2Net\u4eba\u50cf \u2014 \u4ec5\u4eba\u7269")
+_tr("model_u2net_human_desc", "Optimized for human subjects only.", "Nur f\u00fcr menschliche Motive optimiert.", "Optimis\u00e9 uniquement pour les sujets humains.", "Optimizado solo para sujetos humanos.", "\u4ec5\u9488\u5bf9\u4eba\u7269\u4e3b\u9898\u4f18\u5316\u3002")
+_tr("model_silueta_name", "Silueta \u2014 Lightweight", "Silueta \u2014 Leichtgewicht", "Silueta \u2014 L\u00e9ger", "Silueta \u2014 Ligero", "Silueta \u2014 \u8f7b\u91cf\u7ea7")
+_tr("model_silueta_desc", "Smallest and fastest model. Lower quality.", "Kleinstes und schnellstes Modell. Geringere Qualit\u00e4t.", "Mod\u00e8le le plus petit et le plus rapide. Qualit\u00e9 inf\u00e9rieure.", "Modelo m\u00e1s peque\u00f1o y r\u00e1pido. Menor calidad.", "\u6700\u5c0f\u6700\u5feb\u7684\u6a21\u578b\u3002\u8d28\u91cf\u8f83\u4f4e\u3002")
+
+# Processing mode
+_tr("mode_auto", "\u26a1 Auto", "\u26a1 Auto", "\u26a1 Auto", "\u26a1 Auto", "\u26a1 \u81ea\u52a8")
+_tr("mode_review", "\U0001f441 Review", "\U0001f441 \u00dcberpr\u00fcfen", "\U0001f441 R\u00e9viser", "\U0001f441 Revisar", "\U0001f441 \u5ba1\u67e5")
+_tr("mode_auto_desc", "Process all and save automatically", "Alle verarbeiten und automatisch speichern", "Traiter tout et enregistrer automatiquement", "Procesar todo y guardar autom\u00e1ticamente", "\u5904\u7406\u5168\u90e8\u5e76\u81ea\u52a8\u4fdd\u5b58")
+_tr("mode_review_desc", "Review each result before saving", "Jedes Ergebnis vor dem Speichern \u00fcberpr\u00fcfen", "R\u00e9viser chaque r\u00e9sultat avant d'enregistrer", "Revisar cada resultado antes de guardar", "\u4fdd\u5b58\u524d\u5ba1\u67e5\u6bcf\u4e2a\u7ed3\u679c")
+
+# Review page
+_tr("nav_review", "Review", "\u00dcberpr\u00fcfen", "R\u00e9viser", "Revisar", "\u5ba1\u67e5")
+_tr("review_title", "Review Results", "Ergebnisse \u00fcberpr\u00fcfen", "R\u00e9viser les r\u00e9sultats", "Revisar resultados", "\u5ba1\u67e5\u7ed3\u679c")
+_tr("review_prev", "\u2190 Prev", "\u2190 Zur\u00fcck", "\u2190 Pr\u00e9c", "\u2190 Ant", "\u2190 \u4e0a\u4e00\u4e2a")
+_tr("review_next", "Next \u2192", "Weiter \u2192", "Suiv \u2192", "Sig \u2192", "\u4e0b\u4e00\u4e2a \u2192")
+_tr("review_accept", "\u2713 Accept", "\u2713 Akzeptieren", "\u2713 Accepter", "\u2713 Aceptar", "\u2713 \u63a5\u53d7")
+_tr("review_edit", "\u270f Edit", "\u270f Bearbeiten", "\u270f \u00c9diter", "\u270f Editar", "\u270f \u7f16\u8f91")
+_tr("review_reject", "\u2717 Reject", "\u2717 Ablehnen", "\u2717 Rejeter", "\u2717 Rechazar", "\u2717 \u62d2\u7edd")
+_tr("review_of", "{name} ({current} of {total})", "{name} ({current} von {total})", "{name} ({current} sur {total})", "{name} ({current} de {total})", "{name} ({current}/{total})")
+_tr("review_save_all", "Save All Accepted", "Alle Akzeptierten speichern", "Enregistrer tous les accept\u00e9s", "Guardar todos los aceptados", "\u4fdd\u5b58\u6240\u6709\u5df2\u63a5\u53d7")
+_tr("review_progress", "{done} of {total} reviewed", "{done} von {total} \u00fcberpr\u00fcft", "{done} sur {total} r\u00e9vis\u00e9s", "{done} de {total} revisados", "\u5df2\u5ba1\u67e5 {done}/{total}")
+_tr("review_no_results", "No results to review. Process images first.", "Keine Ergebnisse. Bilder zuerst verarbeiten.", "Aucun r\u00e9sultat. Traitez d'abord les images.", "Sin resultados. Procese las im\u00e1genes primero.", "\u6ca1\u6709\u53ef\u5ba1\u67e5\u7684\u7ed3\u679c\u3002\u8bf7\u5148\u5904\u7406\u56fe\u7247\u3002")
+_tr("review_all_done", "All images reviewed!", "Alle Bilder \u00fcberpr\u00fcft!", "Toutes les images r\u00e9vis\u00e9es !", "\u00a1Todas las im\u00e1genes revisadas!", "\u6240\u6709\u56fe\u7247\u5df2\u5ba1\u67e5\uff01")
+
+# Output dialog
+_tr("output_title", "Output Options", "Ausgabeoptionen", "Options de sortie", "Opciones de salida", "\u8f93\u51fa\u9009\u9879")
+_tr("output_folder", "Output Folder", "Ausgabeordner", "Dossier de sortie", "Carpeta de salida", "\u8f93\u51fa\u6587\u4ef6\u5939")
+_tr("output_naming", "File Naming", "Dateinamensgebung", "Nommage des fichiers", "Nombre de archivo", "\u6587\u4ef6\u547d\u540d")
+_tr("output_keep_original", "Keep original name + \"_clean\"", "Originalname + \"_clean\" beibehalten", "Garder le nom original + \"_clean\"", "Mantener nombre original + \"_clean\"", "\u4fdd\u7559\u539f\u59cb\u540d\u79f0 + \"_clean\"")
+_tr("output_bg_removed", "Add \"backgroundremoved\" suffix", "\"backgroundremoved\"-Suffix hinzuf\u00fcgen", "Ajouter le suffixe \"backgroundremoved\"", "Agregar sufijo \"backgroundremoved\"", "\u6dfb\u52a0 \"backgroundremoved\" \u540e\u7f00")
+_tr("output_custom", "Custom prefix/suffix", "Benutzerdefiniertes Pr\u00e4fix/Suffix", "Pr\u00e9fixe/suffixe personnalis\u00e9", "Prefijo/sufijo personalizado", "\u81ea\u5b9a\u4e49\u524d\u7f00/\u540e\u7f00")
+_tr("output_prefix", "Prefix", "Pr\u00e4fix", "Pr\u00e9fixe", "Prefijo", "\u524d\u7f00")
+_tr("output_suffix", "Suffix", "Suffix", "Suffixe", "Sufijo", "\u540e\u7f00")
+_tr("output_date_subfolder", "Create subfolder with today's date", "Unterordner mit heutigem Datum erstellen", "Cr\u00e9er un sous-dossier avec la date du jour", "Crear subcarpeta con la fecha de hoy", "\u521b\u5efa\u4ee5\u4eca\u5929\u65e5\u671f\u547d\u540d\u7684\u5b50\u6587\u4ef6\u5939")
+_tr("output_overwrite", "Overwrite existing files", "Vorhandene Dateien \u00fcberschreiben", "\u00c9craser les fichiers existants", "Sobrescribir archivos existentes", "\u8986\u76d6\u73b0\u6709\u6587\u4ef6")
+_tr("output_save", "Save", "Speichern", "Enregistrer", "Guardar", "\u4fdd\u5b58")
+_tr("output_cancel", "Cancel", "Abbrechen", "Annuler", "Cancelar", "\u53d6\u6d88")
+_tr("output_preview", "Preview: {name}", "Vorschau: {name}", "Aper\u00e7u : {name}", "Vista previa: {name}", "\u9884\u89c8\uff1a{name}")
+_tr("output_saved_count", "Saved {count} images", "Es wurden {count} Bilder gespeichert", "{count} images enregistr\u00e9es", "{count} im\u00e1genes guardadas", "\u5df2\u4fdd\u5b58 {count} \u5f20\u56fe\u7247")
+_tr("output_cancelled", "Save cancelled", "Speichern abgebrochen", "Enregistrement annul\u00e9", "Guardado cancelado", "\u4fdd\u5b58\u5df2\u53d6\u6d88")
+_tr("review_switch", "Switching to Review...", "Wechsle zur \u00dcberpr\u00fcfung...", "Passage \u00e0 la r\u00e9vision...", "Cambiando a revisi\u00f3n...", "\u5207\u6362\u5230\u5ba1\u67e5...")
+_tr("keys_hint", "\u2190 \u2192 Navigate  |  Enter Accept  |  Del Reject  |  E Edit", "\u2190 \u2192 Navigieren  |  Enter Akzeptieren  |  Entf Ablehnen  |  E Bearbeiten", "\u2190 \u2192 Naviguer  |  Entr\u00e9e Accepter  |  Suppr Rejeter  |  E \u00c9diter", "\u2190 \u2192 Navegar  |  Enter Aceptar  |  Supr Rechazar  |  E Editar", "\u2190 \u2192 \u5bfc\u822a  |  \u56de\u8f66 \u63a5\u53d7  |  \u5220\u9664 \u62d2\u7edd  |  E \u7f16\u8f91")
 
 # ── Color Palette — Premium Dark ────────────────────────────────
 BG = "#0f0f0f"
@@ -207,10 +269,11 @@ WIKI_BASE = "https://github.com/Zayn1312/HoneyClean/wiki/Error-Codes"
 CFG_PATH = Path(os.environ.get("APPDATA", ".")) / "HoneyClean" / "config.json"
 DEFAULT_CFG = {
     "output_dir": str(Path.home() / "Downloads" / "HoneyClean_Output"),
-    "gpu_limit": 100, "model": "auto", "alpha_fg": 240, "alpha_bg": 10,
-    "alpha_erode": 10, "use_gpu": True, "debug": False,
+    "gpu_limit": 100, "model": "auto", "alpha_fg": 270, "alpha_bg": 20,
+    "alpha_erode": 15, "use_gpu": True, "debug": False,
     "language": "en", "theme": "dark",
     "eula_accepted": False, "eula_accepted_date": "",
+    "process_mode": "auto", "color_decontaminate": True,
 }
 
 def load_cfg():
@@ -361,7 +424,31 @@ def _auto_install(package):
         return False
 
 # ── Auto Model Selection ────────────────────────────────────────
-MODEL_PRIORITY = ["isnet-general-use", "u2net", "isnet-anime", "u2net_human_seg", "silueta"]
+MODEL_PRIORITY = [
+    "birefnet-general", "birefnet-massive", "birefnet-portrait",
+    "birefnet-general-lite", "isnet-general-use", "u2net",
+    "isnet-anime", "u2net_human_seg", "silueta",
+]
+
+MODEL_INFO = {
+    "auto":                 "model_auto",
+    "birefnet-general":     "model_birefnet_general",
+    "birefnet-massive":     "model_birefnet_massive",
+    "birefnet-portrait":    "model_birefnet_portrait",
+    "birefnet-general-lite":"model_birefnet_general_lite",
+    "isnet-general-use":    "model_isnet_general",
+    "u2net":                "model_u2net",
+    "isnet-anime":          "model_isnet_anime",
+    "u2net_human_seg":      "model_u2net_human",
+    "silueta":              "model_silueta",
+}
+
+MODEL_ORDER = [
+    "auto",
+    "birefnet-general", "birefnet-massive", "birefnet-portrait",
+    "birefnet-general-lite", "isnet-general-use", "u2net",
+    "isnet-anime", "u2net_human_seg", "silueta",
+]
 
 def _auto_select_model():
     """Try models in priority order. Returns (model_name, session) or (None, None)."""
@@ -746,6 +833,9 @@ class ThumbnailGrid(tk.Frame):
         "processing": ACCENT,
         "done": SUCCESS,
         "error": ERROR_CLR,
+        "processed": WARNING,
+        "accepted": SUCCESS,
+        "rejected": ERROR_CLR,
     }
 
     def __init__(self, parent):
@@ -1104,6 +1194,14 @@ class HoneyClean:
         self._restore_geo = ""
         self._pre_fs_geo = ""
         self._current_page = "queue"
+        self._review_results = []
+        self._review_idx = 0
+        self._process_mode_var = tk.StringVar(value=self.cfg.get("process_mode", "auto"))
+
+        # Performance caches
+        self._fit_cache = {}
+        self._checker_cache = {}
+        self._debounce_ids = {}
 
         # Frameless window setup
         self.root.overrideredirect(True)
@@ -1537,6 +1635,7 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         nav_data = [
             ("queue", "\U0001F4CB", t("nav_queue")),
             ("editor", "\u270F", t("nav_editor")),
+            ("review", "\U0001F50D", t("nav_review")),
             ("settings", "\u2699", t("nav_settings")),
             ("about", "\u2139", t("nav_about")),
         ]
@@ -1574,11 +1673,13 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         self._pages = {}
         self._pages["queue"] = tk.Frame(self._content, bg=BG)
         self._pages["editor"] = tk.Frame(self._content, bg=BG)
+        self._pages["review"] = tk.Frame(self._content, bg=BG)
         self._pages["settings"] = tk.Frame(self._content, bg=BG)
         self._pages["about"] = tk.Frame(self._content, bg=BG)
 
         self._build_queue_page(self._pages["queue"])
         self._build_editor_page(self._pages["editor"])
+        self._build_review_page(self._pages["review"])
         self._build_settings_page(self._pages["settings"])
         self._build_about_page(self._pages["about"])
 
@@ -1631,20 +1732,46 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         # Show default page
         self._show_page("queue")
 
+        # Keyboard bindings for review page
+        self.root.bind("<Left>", self._on_key_left)
+        self.root.bind("<Right>", self._on_key_right)
+        self.root.bind("<Return>", self._on_key_enter)
+        self.root.bind("<Delete>", self._on_key_delete)
+        self.root.bind("<BackSpace>", self._on_key_delete)
+        self.root.bind("<e>", self._on_key_e)
+        self.root.bind("<E>", self._on_key_e)
+
+    def _on_key_left(self, event=None):
+        if self._current_page == "review":
+            self._review_prev()
+
+    def _on_key_right(self, event=None):
+        if self._current_page == "review":
+            self._review_next()
+
+    def _on_key_enter(self, event=None):
+        if self._current_page == "review":
+            self._review_accept()
+
+    def _on_key_delete(self, event=None):
+        if self._current_page == "review":
+            self._review_reject()
+
+    def _on_key_e(self, event=None):
+        if self._current_page == "review":
+            # Don't trigger if focus is in an Entry or Text widget
+            w = event.widget if event else None
+            if w and (isinstance(w, tk.Entry) or isinstance(w, tk.Text)):
+                return
+            self._review_open_editor()
+
     def _draw_debug_top_bar(self, event=None):
         c = self._debug_top_bar
         c.delete("all")
         w = c.winfo_width()
         if w < 4:
             return
-        for x in range(w):
-            t_val = x / max(1, w - 1)
-            r = int(58 * (1 - abs(t_val - 0.3) * 2))
-            g = int(130 * (1 - abs(t_val - 0.3) * 2))
-            b = int(255 * (1 - abs(t_val - 0.3) * 2))
-            r, g, b = max(0, r), max(0, g), max(0, b)
-            if r + g + b > 5:
-                c.create_line(x, 0, x, 2, fill=f"#{r:02x}{g:02x}{b:02x}")
+        c.create_line(0, 1, w, 1, fill=BORDER_VISIBLE)
 
     def _draw_footer_sep(self, event=None):
         c = self._footer_sep
@@ -1682,6 +1809,9 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         self.drop_canvas.pack(fill="x")
         self.drop_canvas.bind("<Button-1>", lambda e: self._browse_files())
         self.drop_canvas.bind("<Configure>", lambda e: self._draw_drop())
+        self._drop_hover = False
+        self.drop_canvas.bind("<Enter>", lambda e: self._set_drop_hover(True))
+        self.drop_canvas.bind("<Leave>", lambda e: self._set_drop_hover(False))
         self._dash_offset = 0
         self._animate_drop()
 
@@ -1701,6 +1831,9 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         # Thumbnail grid
         self.thumb_grid = ThumbnailGrid(parent)
         self.thumb_grid.pack(fill="both", expand=True)
+        # Attach scrollbar to thumbnail grid
+        thumb_sb = GlowScrollbar(self.thumb_grid, target=self.thumb_grid._canvas)
+        self.thumb_grid._attach_scrollbar(thumb_sb)
 
         # Hidden listbox for queue tracking
         self._q_list_frame = tk.Frame(parent)
@@ -1709,6 +1842,23 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
                                   relief="flat", bd=0, activestyle="none",
                                   highlightthickness=0)
         self.q_list.pack(fill="both", expand=True)
+
+        # Processing mode toggle
+        mode_row = tk.Frame(parent, bg=BG)
+        mode_row.pack(fill="x", pady=(6, 2))
+        self._mode_auto_btn = AppleButton(mode_row, text=t("mode_auto"),
+                                          command=lambda: self._set_process_mode("auto"),
+                                          style="primary", width=120, height=32,
+                                          font_size=9, bold=True)
+        self._mode_auto_btn.pack(side="left", padx=4)
+        self._mode_review_btn = AppleButton(mode_row, text=t("mode_review"),
+                                            command=lambda: self._set_process_mode("review"),
+                                            style="secondary", width=120, height=32,
+                                            font_size=9, bold=True)
+        self._mode_review_btn.pack(side="left", padx=4)
+        self._mode_desc_lbl = tk.Label(mode_row, text=t("mode_auto_desc"),
+                                       font=(FONT, 8), fg=TEXT_SEC, bg=BG)
+        self._mode_desc_lbl.pack(side="left", padx=8)
 
         # Control buttons row
         btn_row = tk.Frame(parent, bg=BG)
@@ -1831,6 +1981,7 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         self._before_lbl.pack(pady=3)
         self.before_cv = tk.Canvas(before_inner, bg=BG, highlightthickness=0)
         self.before_cv.pack(fill="both", expand=True, padx=2, pady=(0, 2))
+        self.before_cv.bind("<Configure>", lambda e: self._debounce("editor_before", 150, self._refresh_before))
 
         # AFTER
         after_frame = tk.Frame(pf, bg=SURFACE_VAR, padx=1, pady=1)
@@ -1856,21 +2007,26 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         self.after_cv.pack(fill="both", expand=True, padx=2, pady=(0, 2))
         self.after_cv.bind("<B1-Motion>", self._on_canvas_draw)
         self.after_cv.bind("<Button-1>", self._on_canvas_draw)
+        self.after_cv.bind("<Configure>", lambda e: self._debounce("editor_after", 150, self._refresh_after))
 
     # ── Build Settings Page ──────────────────────────────────────
     def _build_settings_page(self, parent):
         # Scrollable settings
         canvas = tk.Canvas(parent, bg=BG, highlightthickness=0, bd=0)
+        self._settings_canvas = canvas
         settings_inner = tk.Frame(canvas, bg=BG)
         settings_inner.bind("<Configure>",
                             lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=settings_inner, anchor="nw")
+        win_id = canvas.create_window((0, 0), window=settings_inner, anchor="nw")
         canvas.pack(fill="both", expand=True)
-        self._settings_sb = GlowScrollbar(parent, target=canvas)
+        # Track canvas width so settings_inner fills horizontally
+        canvas.bind("<Configure>", lambda e: canvas.itemconfigure(win_id, width=e.width))
+        self._settings_sb = GlowScrollbar(canvas, target=canvas)
         self._settings_sb.place(relx=1.0, rely=0, relheight=1.0, anchor="ne")
         canvas.configure(yscrollcommand=self._settings_sb.attach)
         canvas.bind("<MouseWheel>",
                     lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))
+        self._settings_inner = settings_inner
 
         self._settings_title_lbl = tk.Label(settings_inner, text=t("settings_title"),
                  font=(FONT, 16, "bold"), fg=TEXT, bg=BG)
@@ -1883,6 +2039,7 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
 
         gen_frame = tk.Frame(settings_inner, bg=SURFACE, padx=16, pady=12)
         gen_frame.pack(fill="x", padx=20, pady=(0, 8))
+        self._bind_frame_hover(gen_frame)
 
         # Output folder
         of_row = tk.Frame(gen_frame, bg=SURFACE)
@@ -1909,15 +2066,15 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
                      values=["en", "de", "fr", "es", "zh"],
                      state="readonly", width=12).pack(side="left")
 
-        # Theme
+        # Theme (only dark available)
         theme_row = tk.Frame(gen_frame, bg=SURFACE)
         theme_row.pack(fill="x", pady=4)
         self._theme_lbl = tk.Label(theme_row, text=t("theme"), font=(FONT, 9),
                  fg=TEXT_SEC, bg=SURFACE, width=14, anchor="e")
         self._theme_lbl.pack(side="left", padx=(0, 8))
-        self._theme_var = tk.StringVar(value=t("dark"))
-        ttk.Combobox(theme_row, textvariable=self._theme_var,
-                     values=[t("dark")], state="readonly", width=12).pack(side="left")
+        self._theme_value_lbl = tk.Label(theme_row, text=t("dark"), font=(FONT, 9),
+                 fg=TEXT, bg=SURFACE)
+        self._theme_value_lbl.pack(side="left")
 
         # ── AI Model Section ─────────────────────────────────────
         self._section_ai_lbl = tk.Label(settings_inner, text=t("section_ai"),
@@ -1926,6 +2083,7 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
 
         ai_frame = tk.Frame(settings_inner, bg=SURFACE, padx=16, pady=12)
         ai_frame.pack(fill="x", padx=20, pady=(0, 8))
+        self._bind_frame_hover(ai_frame)
 
         # Model
         model_row = tk.Frame(ai_frame, bg=SURFACE)
@@ -1934,10 +2092,32 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
                  fg=TEXT_SEC, bg=SURFACE, width=14, anchor="e")
         self._model_lbl.pack(side="left", padx=(0, 8))
         self._model_var = tk.StringVar(value=self.cfg.get("model", "auto"))
-        ttk.Combobox(model_row, textvariable=self._model_var,
-                     values=["auto", "isnet-anime", "u2net", "u2net_human_seg",
-                             "silueta", "isnet-general-use"],
-                     state="readonly", width=20).pack(side="left")
+        # Build display name mappings
+        self._model_id_by_display = {}
+        self._model_display_by_id = {}
+        display_names = []
+        for mid in MODEL_ORDER:
+            prefix = MODEL_INFO.get(mid, mid)
+            dname = t(prefix + "_name")
+            display_names.append(dname)
+            self._model_id_by_display[dname] = mid
+            self._model_display_by_id[mid] = dname
+        self._model_display_var = tk.StringVar(
+            value=self._model_display_by_id.get(self._model_var.get(), display_names[0]))
+        self._model_combo = ttk.Combobox(model_row, textvariable=self._model_display_var,
+                     values=display_names, state="readonly", width=35)
+        self._model_combo.pack(side="left")
+        self._model_combo.bind("<<ComboboxSelected>>", self._on_model_select)
+
+        # Model description label
+        model_desc_row = tk.Frame(ai_frame, bg=SURFACE)
+        model_desc_row.pack(fill="x", pady=(0, 4))
+        tk.Label(model_desc_row, text="", width=14, bg=SURFACE).pack(side="left", padx=(0, 8))
+        current_id = self._model_var.get()
+        desc_prefix = MODEL_INFO.get(current_id, "model_auto")
+        self._model_desc_lbl = tk.Label(model_desc_row, text=t(desc_prefix + "_desc"),
+                 font=(FONT, 8, "italic"), fg=TEXT_TER, bg=SURFACE, anchor="w")
+        self._model_desc_lbl.pack(side="left", fill="x", expand=True)
 
         # Alpha FG
         afg_row = tk.Frame(ai_frame, bg=SURFACE)
@@ -1945,7 +2125,7 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         self._afg_lbl = tk.Label(afg_row, text=t("alpha_fg_label"), font=(FONT, 9),
                  fg=TEXT_SEC, bg=SURFACE, width=14, anchor="e")
         self._afg_lbl.pack(side="left", padx=(0, 8))
-        self._afg_var = tk.StringVar(value=str(self.cfg.get("alpha_fg", 240)))
+        self._afg_var = tk.StringVar(value=str(self.cfg.get("alpha_fg", 270)))
         tk.Entry(afg_row, textvariable=self._afg_var, font=(FONT, 9), bg=SURFACE_VAR, fg=TEXT,
                  relief="flat", width=8, insertbackground=TEXT).pack(side="left")
 
@@ -1955,7 +2135,7 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         self._abg_lbl = tk.Label(abg_row, text=t("alpha_bg_label"), font=(FONT, 9),
                  fg=TEXT_SEC, bg=SURFACE, width=14, anchor="e")
         self._abg_lbl.pack(side="left", padx=(0, 8))
-        self._abg_var = tk.StringVar(value=str(self.cfg.get("alpha_bg", 10)))
+        self._abg_var = tk.StringVar(value=str(self.cfg.get("alpha_bg", 20)))
         tk.Entry(abg_row, textvariable=self._abg_var, font=(FONT, 9), bg=SURFACE_VAR, fg=TEXT,
                  relief="flat", width=8, insertbackground=TEXT).pack(side="left")
 
@@ -1965,7 +2145,7 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         self._aer_lbl = tk.Label(aer_row, text=t("alpha_erode_label"), font=(FONT, 9),
                  fg=TEXT_SEC, bg=SURFACE, width=14, anchor="e")
         self._aer_lbl.pack(side="left", padx=(0, 8))
-        self._aer_var = tk.StringVar(value=str(self.cfg.get("alpha_erode", 10)))
+        self._aer_var = tk.StringVar(value=str(self.cfg.get("alpha_erode", 15)))
         tk.Entry(aer_row, textvariable=self._aer_var, font=(FONT, 9), bg=SURFACE_VAR, fg=TEXT,
                  relief="flat", width=8, insertbackground=TEXT).pack(side="left")
 
@@ -1976,6 +2156,7 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
 
         gpu_frame = tk.Frame(settings_inner, bg=SURFACE, padx=16, pady=12)
         gpu_frame.pack(fill="x", padx=20, pady=(0, 8))
+        self._bind_frame_hover(gpu_frame)
 
         # Use GPU
         gpu_check_row = tk.Frame(gpu_frame, bg=SURFACE)
@@ -2005,6 +2186,13 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
                                               command=self._save_settings, style="primary",
                                               width=200, height=40, font_size=10)
         self._save_settings_btn.pack(pady=(16, 20), padx=20, anchor="w")
+
+        # Bind mousewheel on ALL child widgets to propagate scroll to canvas
+        def _bind_scroll(widget, cv):
+            widget.bind("<MouseWheel>", lambda e: cv.yview_scroll(-1*(e.delta//120), "units"))
+            for child in widget.winfo_children():
+                _bind_scroll(child, cv)
+        _bind_scroll(settings_inner, canvas)
 
     # ── Build About Page ─────────────────────────────────────────
     def _build_about_page(self, parent):
@@ -2045,6 +2233,273 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
             val.pack(side="left")
             self._about_info_labels.append((lbl, val))
 
+    # ── Build Review Page ─────────────────────────────────────────
+    def _build_review_page(self, parent):
+        # Header: navigation
+        header = tk.Frame(parent, bg=SURFACE, padx=8, pady=6)
+        header.pack(fill="x")
+
+        self._rev_prev_btn = AppleButton(header, text=t("review_prev"),
+                                         command=self._review_prev, style="secondary",
+                                         width=100, height=32, font_size=9)
+        self._rev_prev_btn.pack(side="left", padx=4)
+
+        self._rev_title_lbl = tk.Label(header, text=t("review_title"),
+                                       font=(FONT, 11, "bold"), fg=TEXT, bg=SURFACE)
+        self._rev_title_lbl.pack(side="left", fill="x", expand=True)
+
+        self._rev_next_btn = AppleButton(header, text=t("review_next"),
+                                         command=self._review_next, style="secondary",
+                                         width=100, height=32, font_size=9)
+        self._rev_next_btn.pack(side="right", padx=4)
+
+        # Before / After panels
+        pf = tk.Frame(parent, bg=BG)
+        pf.pack(fill="both", expand=True, pady=(6, 0))
+
+        # BEFORE
+        before_frame = tk.Frame(pf, bg=SURFACE_VAR, padx=1, pady=1)
+        before_frame.pack(side="left", fill="both", expand=True, padx=(0, 3))
+        before_inner = tk.Frame(before_frame, bg=SURFACE)
+        before_inner.pack(fill="both", expand=True)
+        tk.Label(before_inner, text=t("before_label"), font=(FONT, 8, "bold"),
+                 fg=ERROR_CLR, bg=SURFACE).pack(pady=3)
+        self._rev_before_cv = tk.Canvas(before_inner, bg=BG, highlightthickness=0)
+        self._rev_before_cv.pack(fill="both", expand=True, padx=2, pady=(0, 2))
+        self._rev_before_cv.bind("<Configure>", lambda e: self._debounce("review_display", 150, self._review_refresh_display))
+
+        # AFTER
+        after_frame = tk.Frame(pf, bg=SURFACE_VAR, padx=1, pady=1)
+        after_frame.pack(side="right", fill="both", expand=True, padx=(3, 0))
+        after_inner = tk.Frame(after_frame, bg=SURFACE)
+        after_inner.pack(fill="both", expand=True)
+        tk.Label(after_inner, text=t("after_label"), font=(FONT, 8, "bold"),
+                 fg=ACCENT, bg=SURFACE).pack(pady=3)
+        self._rev_after_cv = tk.Canvas(after_inner, bg=BG, highlightthickness=0)
+        self._rev_after_cv.pack(fill="both", expand=True, padx=2, pady=(0, 2))
+        self._rev_after_cv.bind("<Configure>", lambda e: self._debounce("review_display", 150, self._review_refresh_display))
+
+        # Action buttons
+        action_row = tk.Frame(parent, bg=BG)
+        action_row.pack(fill="x", pady=(6, 2))
+
+        self._rev_accept_btn = AppleButton(action_row, text=t("review_accept"),
+                                           command=self._review_accept, style="primary",
+                                           width=140, height=40, font_size=11)
+        self._rev_accept_btn.pack(side="left", padx=4)
+
+        self._rev_edit_btn = AppleButton(action_row, text=t("review_edit"),
+                                         command=self._review_open_editor, style="secondary",
+                                         width=120, height=40, font_size=11)
+        self._rev_edit_btn.pack(side="left", padx=4)
+
+        self._rev_reject_btn = AppleButton(action_row, text=t("review_reject"),
+                                           command=self._review_reject, style="destructive",
+                                           width=140, height=40, font_size=11)
+        self._rev_reject_btn.pack(side="left", padx=4)
+
+        self._rev_save_all_btn = AppleButton(action_row, text=t("review_save_all"),
+                                             command=self._review_save_all, style="primary",
+                                             width=200, height=40, font_size=10)
+        self._rev_save_all_btn.pack(side="right", padx=4)
+        self._rev_save_all_btn.set_state(False)
+
+        # Progress row
+        prog_row = tk.Frame(parent, bg=BG)
+        prog_row.pack(fill="x", pady=(4, 0))
+
+        self._rev_progress_lbl = tk.Label(prog_row, text="", font=(FONT, 9),
+                                          fg=TEXT_SEC, bg=BG)
+        self._rev_progress_lbl.pack(side="left", padx=4)
+
+        self._rev_keys_lbl = tk.Label(prog_row, text=t("keys_hint"),
+                                      font=(FONT, 7), fg=TEXT_TER, bg=BG)
+        self._rev_keys_lbl.pack(side="right", padx=4)
+
+    # ── Process Mode Toggle ───────────────────────────────────────
+    def _set_process_mode(self, mode):
+        self._process_mode_var.set(mode)
+        self.cfg["process_mode"] = mode
+        if mode == "auto":
+            self._mode_auto_btn.set_state(True, style="primary")
+            self._mode_review_btn.set_state(True, style="secondary")
+            self._mode_desc_lbl.config(text=t("mode_auto_desc"))
+        else:
+            self._mode_auto_btn.set_state(True, style="secondary")
+            self._mode_review_btn.set_state(True, style="primary")
+            self._mode_desc_lbl.config(text=t("mode_review_desc"))
+
+    # ── Review Page Methods ───────────────────────────────────────
+    def _review_show(self, idx=None):
+        """Display the image at the given review index."""
+        if idx is not None:
+            self._review_idx = idx
+        if not self._review_results:
+            self._rev_title_lbl.config(text=t("review_no_results"))
+            return
+        idx = max(0, min(self._review_idx, len(self._review_results) - 1))
+        self._review_idx = idx
+        item = self._review_results[idx]
+        total = len(self._review_results)
+        self._rev_title_lbl.config(
+            text=t("review_of", name=item["path"].name, current=idx+1, total=total))
+        self._review_refresh_display()
+        self._review_update_progress()
+
+    def _review_refresh_display(self):
+        """Refresh the before/after canvases for the current review item."""
+        if not self._review_results:
+            return
+        if self._review_idx < 0 or self._review_idx >= len(self._review_results):
+            return
+        item = self._review_results[self._review_idx]
+
+        # Before image
+        try:
+            orig = item.get("original")
+            if orig:
+                disp = self._fit(orig, self._rev_before_cv)
+                bg = Image.new("RGB", disp.size, (15, 15, 15))
+                bg.paste(disp, mask=disp.split()[3])
+                self._rev_tk_before = ImageTk.PhotoImage(bg)
+                self._rev_before_cv.delete("all")
+                cw = self._rev_before_cv.winfo_width()
+                ch = self._rev_before_cv.winfo_height()
+                if cw < 2: cw = 400
+                if ch < 2: ch = 300
+                self._rev_before_cv.create_image(cw // 2, ch // 2, anchor="center",
+                                                 image=self._rev_tk_before)
+        except: pass
+
+        # After image (checkerboard)
+        try:
+            result = item.get("result")
+            if result:
+                disp = self._fit(result, self._rev_after_cv)
+                bg = self._checker(disp.size)
+                bg.paste(disp, mask=disp.split()[3])
+                self._rev_tk_after = ImageTk.PhotoImage(bg)
+                self._rev_after_cv.delete("all")
+                cw = self._rev_after_cv.winfo_width()
+                ch = self._rev_after_cv.winfo_height()
+                if cw < 2: cw = 400
+                if ch < 2: ch = 300
+                self._rev_after_cv.create_image(cw // 2, ch // 2, anchor="center",
+                                                image=self._rev_tk_after)
+        except: pass
+
+    def _review_prev(self):
+        if self._review_results and self._review_idx > 0:
+            self._review_show(self._review_idx - 1)
+
+    def _review_next(self):
+        if self._review_results and self._review_idx < len(self._review_results) - 1:
+            self._review_show(self._review_idx + 1)
+
+    def _review_accept(self):
+        if not self._review_results:
+            return
+        item = self._review_results[self._review_idx]
+        item["status"] = "accepted"
+        # Update thumbnail
+        idx_in_queue = self._review_find_queue_idx(item["path"])
+        if idx_in_queue >= 0:
+            self.thumb_grid.update_status(idx_in_queue, "accepted")
+        self._review_update_progress()
+        # Auto-advance
+        if self._review_idx < len(self._review_results) - 1:
+            self._review_show(self._review_idx + 1)
+        else:
+            self._review_check_all_done()
+
+    def _review_reject(self):
+        if not self._review_results:
+            return
+        item = self._review_results[self._review_idx]
+        item["status"] = "rejected"
+        idx_in_queue = self._review_find_queue_idx(item["path"])
+        if idx_in_queue >= 0:
+            self.thumb_grid.update_status(idx_in_queue, "rejected")
+        self._review_update_progress()
+        if self._review_idx < len(self._review_results) - 1:
+            self._review_show(self._review_idx + 1)
+        else:
+            self._review_check_all_done()
+
+    def _review_open_editor(self):
+        if not self._review_results:
+            return
+        item = self._review_results[self._review_idx]
+        # Load into editor
+        self._orig_before = item.get("original")
+        result = item.get("result")
+        if result:
+            self._orig_after = result.copy()
+            self._edit_after = result.copy()
+            self._src_path = item["path"]
+            self._out_path = item.get("out_path")
+            self._review_editing_idx = self._review_idx
+            self._refresh_before()
+            self._refresh_after()
+            self._show_page("editor")
+
+    def _review_find_queue_idx(self, path):
+        for i, p in enumerate(self.queue_items):
+            if p == path:
+                return i
+        return -1
+
+    def _review_update_progress(self):
+        if not self._review_results:
+            return
+        done = sum(1 for r in self._review_results if r["status"] in ("accepted", "rejected", "edited"))
+        total = len(self._review_results)
+        self._rev_progress_lbl.config(text=t("review_progress", done=done, total=total))
+        # Enable save all when all reviewed
+        if done >= total:
+            self._rev_save_all_btn.set_state(True)
+
+    def _review_check_all_done(self):
+        done = sum(1 for r in self._review_results if r["status"] in ("accepted", "rejected", "edited"))
+        if done >= len(self._review_results):
+            self.status_lbl.config(text=t("review_all_done"), fg=SUCCESS)
+            self._rev_save_all_btn.set_state(True)
+
+    def _review_save_all(self):
+        """Gather accepted/edited items and show output dialog."""
+        items_to_save = [r for r in self._review_results
+                         if r["status"] in ("accepted", "edited")]
+        if not items_to_save:
+            self.status_lbl.config(text=t("status_no_image"), fg=WARNING)
+            return
+        self._show_output_dialog(items_to_save)
+
+    def _review_return_from_editor(self):
+        """Called when saving from editor while in review-edit mode."""
+        if hasattr(self, "_review_editing_idx"):
+            idx = self._review_editing_idx
+            if 0 <= idx < len(self._review_results):
+                self._review_results[idx]["result"] = self._edit_after.copy()
+                self._review_results[idx]["status"] = "edited"
+                q_idx = self._review_find_queue_idx(self._review_results[idx]["path"])
+                if q_idx >= 0:
+                    self.thumb_grid.update_status(q_idx, "accepted")
+            del self._review_editing_idx
+            self._review_update_progress()
+            self._show_page("review")
+            self._review_show(idx)
+
+    # ── Model Selector Handlers ──────────────────────────────────
+    def _on_model_select(self, event=None):
+        display = self._model_display_var.get()
+        model_id = self._model_id_by_display.get(display, "auto")
+        self._model_var.set(model_id)
+        self._update_model_desc()
+
+    def _update_model_desc(self):
+        model_id = self._model_var.get()
+        prefix = MODEL_INFO.get(model_id, "model_auto")
+        self._model_desc_lbl.config(text=t(prefix + "_desc"))
 
     # ── Save Settings ────────────────────────────────────────────
     def _save_settings(self):
@@ -2056,6 +2511,7 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         self.cfg["model"] = self._model_var.get()
         self.cfg["use_gpu"] = self._use_gpu_var.get()
         self.cfg["gpu_limit"] = self.throttle_var.get()
+        self.cfg["process_mode"] = self._process_mode_var.get()
 
         try: self.cfg["alpha_fg"] = int(self._afg_var.get())
         except: pass
@@ -2084,6 +2540,21 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         save_cfg(self.cfg)
 
     # ── Animated drop zone ───────────────────────────────────────
+    def _set_drop_hover(self, hover):
+        self._drop_hover = hover
+        self._draw_drop()
+
+    def _bind_frame_hover(self, frame):
+        """Add a subtle accent-colored left border highlight on hover."""
+        indicator = tk.Frame(frame, bg=SURFACE, width=3)
+        indicator.place(x=0, y=0, relheight=1.0)
+        def _enter(e):
+            indicator.config(bg=ACCENT)
+        def _leave(e):
+            indicator.config(bg=SURFACE)
+        frame.bind("<Enter>", _enter)
+        frame.bind("<Leave>", _leave)
+
     def _draw_drop(self):
         c = self.drop_canvas
         c.delete("all")
@@ -2091,13 +2562,22 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         h = c.winfo_height()
         if w < 10:
             return
+        if self._drop_hover:
+            c.create_rectangle(0, 0, w, h, fill="#1a2a3f", outline="")
+            border_color = "#5a9aff"
+            text_color = TEXT
+            icon_color = "#5a9aff"
+        else:
+            border_color = ACCENT
+            text_color = TEXT_SEC
+            icon_color = ACCENT
         c.create_rectangle(8, 8, w-8, h-8, dash=(10, 5),
                            dashoffset=self._dash_offset,
-                           outline=ACCENT, width=2)
-        c.create_text(w//2, h//2 - 8, text="\U0001F4C2", font=(FONT, 16), fill=ACCENT)
+                           outline=border_color, width=2)
+        c.create_text(w//2, h//2 - 8, text="\U0001F4C2", font=(FONT, 16), fill=icon_color)
         c.create_text(w//2, h//2 + 14,
                       text=t("drop_zone"),
-                      font=(FONT, 8), fill=TEXT_SEC)
+                      font=(FONT, 8), fill=text_color)
 
     def _animate_drop(self):
         self._dash_offset = (self._dash_offset + 1) % 15
@@ -2185,6 +2665,12 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
             self.thumb_grid.clear()
             self.prog_lbl.config(text="0 / 0")
             self.prog.set(0)
+            self._review_results.clear()
+            self._review_idx = 0
+            if hasattr(self, "_rev_progress_lbl"):
+                self._rev_progress_lbl.config(text="")
+            if hasattr(self, "_rev_save_all_btn"):
+                self._rev_save_all_btn.set_state(False)
 
     def _setup_dnd(self):
         try:
@@ -2220,10 +2706,25 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
                     if iv:
                         self._add(p)
 
+    def _open_folder(self, folder_path):
+        """Open a folder in the system file manager (cross-platform)."""
+        folder = str(folder_path)
+        if not os.path.isdir(folder):
+            return
+        try:
+            if sys.platform == "win32":
+                os.startfile(folder)
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", folder])
+            else:
+                subprocess.Popen(["xdg-open", folder])
+        except Exception:
+            pass
+
     def _open_output(self):
         out = self.cfg.get("output_dir", "")
         if out and os.path.exists(out):
-            os.startfile(out)
+            self._open_folder(out)
         else:
             self.status_lbl.config(text=t("status_output_missing"), fg=WARNING)
 
@@ -2282,6 +2783,10 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         self.processing = True
         self.paused = False
         self.stop_flag = False
+        self._review_results.clear()
+        self._review_idx = 0
+        if hasattr(self, "_rev_save_all_btn"):
+            self._rev_save_all_btn.set_state(False)
         self.start_btn.set_state(False)
         self.pause_btn.set_state(True, text="\u23F8  " + t("btn_pause"))
         self.stop_btn.set_state(True)
@@ -2358,16 +2863,38 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
 
         os.environ["ORT_LOGGING_LEVEL"] = "3"
 
+        # Configure ONNX session options for maximum GPU utilization
+        sess_opts = None
         try:
-            self.session = new_session(model, providers=providers)
+            import onnxruntime as ort
+            sess_opts = ort.SessionOptions()
+            sess_opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+            sess_opts.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+            sess_opts.enable_mem_pattern = True
+            sess_opts.add_session_config_entry('session.intra_op.allow_spinning', '1')
+            self._log("ONNX session options configured for max GPU utilization")
+        except Exception as e:
+            self._log(f"Could not set ONNX session options: {e}")
+            sess_opts = None
+
+        try:
+            if sess_opts is not None:
+                self.session = new_session(model, providers=providers, sess_opts=sess_opts)
+            else:
+                self.session = new_session(model, providers=providers)
         except TypeError:
-            self.session = new_session(model)
+            try:
+                self.session = new_session(model, providers=providers)
+            except TypeError:
+                self.session = new_session(model)
 
         self.session_model = model
         self._log(f"Model loaded: {model}")
         return True
 
     def _run(self):
+        is_review = self._process_mode_var.get() == "review"
+
         self.root.after(0, lambda: self.status_lbl.config(
             text=t("status_loading"), fg=ACCENT))
         try:
@@ -2390,16 +2917,28 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
 
         out_base = Path(self.cfg.get("output_dir",
                         str(Path.home() / "Downloads" / "HoneyClean_Output")))
-        try:
-            out_base.mkdir(parents=True, exist_ok=True)
-        except Exception as e:
-            self._show_error("HC-024", path=str(out_base))
-            self._finish()
-            return
+
+        # In auto mode, create output dir now; in review mode, defer to save dialog
+        if not is_review:
+            try:
+                out_base.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                self._show_error("HC-024", path=str(out_base))
+                self._finish()
+                return
+
+        # Reset review results
+        if is_review:
+            self._review_results = []
 
         total = len(self.queue_items)
         done = 0
         t0 = time.time()
+        auto_results = []  # for auto mode output dialog
+
+        from concurrent.futures import ThreadPoolExecutor
+        prefetcher = ThreadPoolExecutor(max_workers=1)
+        next_future = None
 
         for i, img_path in enumerate(self.queue_items):
             if self.stop_flag:
@@ -2416,50 +2955,113 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
                 self.q_list.see(idx)
             ])
 
-            out_file = out_base / (img_path.stem + "_clean.png")
             self.root.after(0, self._show_before, img_path)
             self.root.after(0, lambda n=img_path.name, c=i+1, tot=total:
                 self.file_lbl.config(
                     text=t("file_processing", name=n, current=c, total=tot), fg=TEXT_SEC))
             self._log(t("file_processing", name=img_path.name, current=i+1, total=total))
 
-            if out_file.exists():
+            # Load original for review
+            try:
+                original_img = Image.open(img_path).convert("RGBA")
+            except Exception:
+                original_img = None
+
+            # Check for existing output (auto mode only, skip in review)
+            out_file = out_base / (img_path.stem + "_clean.png")
+            if not is_review and out_file.exists():
                 img = Image.open(out_file).convert("RGBA")
                 self.root.after(0, self._show_after, img, img_path, out_file)
+                auto_results.append({"path": img_path, "original": original_img,
+                                     "result": img, "status": "accepted", "out_path": out_file})
                 done += 1
                 self.root.after(0, self._upd_prog, done, total, t0)
                 self.root.after(0, lambda idx=i: self.thumb_grid.update_status(idx, "done"))
+                # Pre-fetch next image
+                if i + 1 < total:
+                    next_future = prefetcher.submit(self.queue_items[i + 1].read_bytes)
                 continue
 
             try:
-                with open(img_path, "rb") as f:
-                    data = f.read()
+                # Use pre-fetched data if available, otherwise read now
+                if next_future is not None:
+                    try:
+                        data = next_future.result(timeout=10)
+                    except Exception:
+                        data = img_path.read_bytes()
+                    next_future = None
+                else:
+                    data = img_path.read_bytes()
+                # Pre-fetch next image while GPU processes current one
+                if i + 1 < total:
+                    next_future = prefetcher.submit(self.queue_items[i + 1].read_bytes)
 
                 from rembg import remove
                 try:
-                    out_data = remove(
-                        data,
-                        session=self.session,
-                        alpha_matting=True,
-                        alpha_matting_foreground_threshold=self.cfg.get("alpha_fg", 240),
-                        alpha_matting_background_threshold=self.cfg.get("alpha_bg", 10),
-                        alpha_matting_erode_size=self.cfg.get("alpha_erode", 10),
-                    )
+                    try:
+                        out_data = remove(
+                            data,
+                            session=self.session,
+                            alpha_matting=True,
+                            alpha_matting_foreground_threshold=self.cfg.get("alpha_fg", 270),
+                            alpha_matting_background_threshold=self.cfg.get("alpha_bg", 20),
+                            alpha_matting_erode_size=self.cfg.get("alpha_erode", 15),
+                            post_process_mask=True,
+                        )
+                    except TypeError:
+                        # Older rembg without post_process_mask support
+                        out_data = remove(
+                            data,
+                            session=self.session,
+                            alpha_matting=True,
+                            alpha_matting_foreground_threshold=self.cfg.get("alpha_fg", 270),
+                            alpha_matting_background_threshold=self.cfg.get("alpha_bg", 20),
+                            alpha_matting_erode_size=self.cfg.get("alpha_erode", 15),
+                        )
                 except ImportError:
-                    # pymatting not available, process without alpha matting
                     self._log("pymatting not available, processing without alpha matting")
                     self._show_error("HC-003")
-                    out_data = remove(data, session=self.session)
+                    try:
+                        out_data = remove(data, session=self.session, post_process_mask=True)
+                    except TypeError:
+                        out_data = remove(data, session=self.session)
 
                 result = Image.open(io.BytesIO(out_data)).convert("RGBA")
-                result.save(out_file, "PNG")
 
-                self.root.after(0, self._show_after, result, img_path, out_file)
-                self.root.after(0, lambda idx=i: self.thumb_grid.update_status(idx, "done"))
-                self._log(f"Saved: {out_file.name}")
+                # Color decontamination for cleaner edges
+                if self.cfg.get("color_decontaminate", True):
+                    try:
+                        result = self._decontaminate_edges(result)
+                    except Exception:
+                        pass  # Graceful fallback if decontamination fails
+
+                if is_review:
+                    # Store result in memory, don't save to disk
+                    self._review_results.append({
+                        "path": img_path,
+                        "original": original_img,
+                        "result": result,
+                        "status": "pending",
+                        "out_path": None,
+                    })
+                    self.root.after(0, self._show_after, result, img_path, None)
+                    self.root.after(0, lambda idx=i: self.thumb_grid.update_status(idx, "processed"))
+                else:
+                    # Auto mode: save immediately (will show output dialog at end)
+                    auto_results.append({
+                        "path": img_path,
+                        "original": original_img,
+                        "result": result,
+                        "status": "accepted",
+                        "out_path": out_file,
+                    })
+                    self.root.after(0, self._show_after, result, img_path, out_file)
+                    self.root.after(0, lambda idx=i: self.thumb_grid.update_status(idx, "done"))
+
+                self._log(f"Processed: {img_path.name}")
                 done += 1
                 self.root.after(0, self._upd_prog, done, total, t0)
-                time.sleep(0.1)
+                time.sleep(0.01)
 
             except Exception as e:
                 self._log(f"Error {img_path.name}: {traceback.format_exc()}")
@@ -2468,12 +3070,25 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
                 done += 1
                 self.root.after(0, self._upd_prog, done, total, t0)
 
+        prefetcher.shutdown(wait=False)
+
         self.root.after(0, lambda d=done: [
             self.status_lbl.config(
                 text=t("status_done", count=d), fg=SUCCESS),
             self.file_lbl.config(text=f"{d} {t('images_processed')}")
         ])
         self._finish()
+
+        if is_review and self._review_results:
+            # Switch to Review page
+            self.root.after(0, lambda: [
+                self.status_lbl.config(text=t("review_switch"), fg=ACCENT),
+                self._show_page("review"),
+                self._review_show(0),
+            ])
+        elif not is_review and auto_results and not self.stop_flag:
+            # Auto mode: show output dialog
+            self.root.after(100, lambda items=auto_results: self._show_output_dialog(items))
 
     def _finish(self):
         self.processing = False
@@ -2497,30 +3112,66 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
             self._speed_lbl.config(text=t("progress_speed", speed=speed))
 
     # ── Image display ────────────────────────────────────────────
-    def _fit(self, img, canvas):
+    def _invalidate_fit_cache(self):
+        self._fit_cache.clear()
+
+    def _debounce(self, key, delay_ms, callback):
+        """Cancel any pending callback for `key`, schedule a new one after delay_ms."""
+        if key in self._debounce_ids:
+            self.root.after_cancel(self._debounce_ids[key])
+        self._debounce_ids[key] = self.root.after(delay_ms, callback)
+
+    def _fit(self, img, canvas, fast=False):
         canvas.update_idletasks()
-        cw = canvas.winfo_width() or 400
-        ch = canvas.winfo_height() or 300
+        cw = canvas.winfo_width()
+        ch = canvas.winfo_height()
+        if cw < 2:
+            cw = canvas.winfo_reqwidth() or 400
+        if ch < 2:
+            ch = canvas.winfo_reqheight() or 300
         iw, ih = img.size
         s = min(cw / iw, ch / ih, 1.0)
         nw, nh = max(1, int(iw * s)), max(1, int(ih * s))
         self._scale = s
         self._offset = ((cw - nw) // 2, (ch - nh) // 2)
-        return img.resize((nw, nh), Image.LANCZOS)
+        # Check cache (only for non-fast/HQ renders)
+        cache_key = (id(img), nw, nh)
+        if not fast and cache_key in self._fit_cache:
+            return self._fit_cache[cache_key]
+        resample = Image.BILINEAR if fast else Image.LANCZOS
+        result = img.resize((nw, nh), resample)
+        if not fast:
+            # Keep cache small
+            if len(self._fit_cache) >= 8:
+                self._fit_cache.clear()
+            self._fit_cache[cache_key] = result
+        return result
 
     def _show_before(self, path):
         try:
             img = Image.open(path).convert("RGBA")
             self._orig_before = img
-            disp = self._fit(img, self.before_cv)
+            self._refresh_before()
+        except: pass
+
+    def _refresh_before(self, fast=False):
+        if not hasattr(self, "_orig_before") or self._orig_before is None:
+            return
+        try:
+            disp = self._fit(self._orig_before, self.before_cv, fast=fast)
             bg = Image.new("RGB", disp.size, (15, 15, 15))
             bg.paste(disp, mask=disp.split()[3])
             self._tk_before = ImageTk.PhotoImage(bg)
             self.before_cv.delete("all")
-            cw = self.before_cv.winfo_width() or 400
-            ch = self.before_cv.winfo_height() or 300
+            cw = self.before_cv.winfo_width()
+            ch = self.before_cv.winfo_height()
+            if cw < 2: cw = 400
+            if ch < 2: ch = 300
             self.before_cv.create_image(cw // 2, ch // 2, anchor="center",
                                         image=self._tk_before)
+            # Schedule HQ render after fast preview
+            if fast:
+                self._debounce("hq_before", 300, lambda: self._refresh_before(fast=False))
         except: pass
 
     def _show_after(self, img, src_path=None, out_path=None):
@@ -2530,12 +3181,13 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         self._out_path = out_path
         self.last_result_img = img
         self.last_result_path = out_path
+        self._invalidate_fit_cache()
         self._refresh_after()
 
-    def _refresh_after(self):
+    def _refresh_after(self, fast=False):
         if not hasattr(self, "_edit_after"):
             return
-        disp = self._fit(self._edit_after, self.after_cv)
+        disp = self._fit(self._edit_after, self.after_cv, fast=fast)
         if self.checker_var.get():
             bg = self._checker(disp.size)
         else:
@@ -2547,15 +3199,23 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         ch = self.after_cv.winfo_height() or 300
         self.after_cv.create_image(cw // 2, ch // 2, anchor="center",
                                    image=self._tk_after)
+        if fast:
+            self._debounce("hq_after", 300, lambda: self._refresh_after(fast=False))
 
     def _checker(self, size, sq=14):
+        cache_key = (size[0], size[1], sq)
+        if cache_key in self._checker_cache:
+            return self._checker_cache[cache_key].copy()
         img = Image.new("RGB", size)
         d = ImageDraw.Draw(img)
         for y in range(0, size[1], sq):
             for x in range(0, size[0], sq):
                 c = (170, 170, 170) if (x // sq + y // sq) % 2 == 0 else (100, 100, 100)
                 d.rectangle([x, y, x + sq - 1, y + sq - 1], fill=c)
-        return img
+        if len(self._checker_cache) >= 4:
+            self._checker_cache.clear()
+        self._checker_cache[cache_key] = img
+        return img.copy()
 
     # ── Erase / Restore tools ────────────────────────────────────
     def _toggle_erase(self):
@@ -2616,8 +3276,40 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         result = np.clip(a - m, 0, 255).astype(np.uint8)
         return Image.fromarray(result, mode="L")
 
+    def _decontaminate_edges(self, img):
+        """Remove background color spill from semi-transparent edge pixels."""
+        import numpy as np
+        arr = np.array(img, dtype=np.float32)
+        alpha = arr[:, :, 3]
+        # Edge region: pixels with partial transparency
+        edge_mask = (alpha > 10) & (alpha < 245)
+        # Fully opaque foreground
+        fg_mask = alpha >= 245
+        if not np.any(edge_mask) or not np.any(fg_mask):
+            return img
+        # Average color of opaque foreground
+        fg_pixels = arr[fg_mask][:, :3]
+        fg_avg = fg_pixels.mean(axis=0)
+        # Blend edge pixels toward foreground average
+        edge_alpha_norm = alpha[edge_mask] / 255.0
+        blend_strength = 1.0 - edge_alpha_norm  # More blending for more transparent
+        blend_strength = blend_strength * 0.6  # Reduce intensity to avoid artifacts
+        for c in range(3):
+            channel = arr[:, :, c]
+            original = channel[edge_mask]
+            channel[edge_mask] = original * (1.0 - blend_strength) + fg_avg[c] * blend_strength
+        arr = np.clip(arr, 0, 255).astype(np.uint8)
+        return Image.fromarray(arr, "RGBA")
+
     def _save_edit(self):
-        if not hasattr(self, "_edit_after") or not hasattr(self, "_out_path") or self._out_path is None:
+        if not hasattr(self, "_edit_after"):
+            self.status_lbl.config(text=t("status_no_image"), fg=WARNING)
+            return
+        # If editing from review mode, return to review instead of saving to disk
+        if hasattr(self, "_review_editing_idx"):
+            self._review_return_from_editor()
+            return
+        if not hasattr(self, "_out_path") or self._out_path is None:
             self.status_lbl.config(text=t("status_no_image"), fg=WARNING)
             return
         self._edit_after.save(self._out_path, "PNG")
@@ -2629,6 +3321,196 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
             self._edit_after = self._orig_after.copy()
             self._refresh_after()
             self.status_lbl.config(text=t("status_reset_done"), fg=TEXT_SEC)
+
+    # ── Output Dialog ─────────────────────────────────────────────
+    def _show_output_dialog(self, items_to_save):
+        """Show dialog for naming/sorting output files, then save."""
+        from datetime import datetime
+
+        dlg = tk.Toplevel(self.root)
+        dlg.title(t("output_title"))
+        dlg.geometry("520x420")
+        dlg.configure(bg=BG)
+        dlg.resizable(False, False)
+        dlg.grab_set()
+        dlg.update_idletasks()
+        px = self.root.winfo_x() + (self.root.winfo_width() - 520) // 2
+        py = self.root.winfo_y() + (self.root.winfo_height() - 420) // 2
+        dlg.geometry(f"+{px}+{py}")
+
+        tk.Label(dlg, text=t("output_title"), font=(FONT, 14, "bold"),
+                 fg=TEXT, bg=BG).pack(pady=(16, 12))
+
+        # Output folder
+        folder_frame = tk.Frame(dlg, bg=BG)
+        folder_frame.pack(fill="x", padx=24, pady=4)
+        tk.Label(folder_frame, text=t("output_folder") + ":", font=(FONT, 9),
+                 fg=TEXT_SEC, bg=BG).pack(anchor="w")
+        folder_row = tk.Frame(folder_frame, bg=BG)
+        folder_row.pack(fill="x", pady=2)
+        folder_var = tk.StringVar(value=self.cfg.get("output_dir",
+                                  str(Path.home() / "Downloads" / "HoneyClean_Output")))
+        tk.Entry(folder_row, textvariable=folder_var, font=(FONT, 9), bg=SURFACE_VAR, fg=TEXT,
+                 relief="flat", insertbackground=TEXT).pack(side="left", fill="x", expand=True)
+        tk.Button(folder_row, text="\U0001F4C2", bg=SURFACE_VAR, fg=TEXT_SEC,
+                  relief="flat", padx=8, font=(FONT, 9),
+                  command=lambda: folder_var.set(
+                      filedialog.askdirectory(parent=dlg) or folder_var.get())
+                  ).pack(side="left", padx=(4, 0))
+
+        # Naming mode
+        tk.Label(dlg, text=t("output_naming") + ":", font=(FONT, 9),
+                 fg=TEXT_SEC, bg=BG).pack(anchor="w", padx=24, pady=(12, 4))
+
+        naming_var = tk.StringVar(value="original")
+        naming_frame = tk.Frame(dlg, bg=SURFACE, padx=12, pady=8)
+        naming_frame.pack(fill="x", padx=24)
+
+        tk.Radiobutton(naming_frame, text=t("output_keep_original"),
+                       variable=naming_var, value="original",
+                       bg=SURFACE, fg=TEXT, selectcolor=SURFACE_VAR,
+                       activebackground=SURFACE, activeforeground=TEXT,
+                       font=(FONT, 9)).pack(anchor="w", pady=2)
+        tk.Radiobutton(naming_frame, text=t("output_bg_removed"),
+                       variable=naming_var, value="backgroundremoved",
+                       bg=SURFACE, fg=TEXT, selectcolor=SURFACE_VAR,
+                       activebackground=SURFACE, activeforeground=TEXT,
+                       font=(FONT, 9)).pack(anchor="w", pady=2)
+        tk.Radiobutton(naming_frame, text=t("output_custom"),
+                       variable=naming_var, value="custom",
+                       bg=SURFACE, fg=TEXT, selectcolor=SURFACE_VAR,
+                       activebackground=SURFACE, activeforeground=TEXT,
+                       font=(FONT, 9)).pack(anchor="w", pady=2)
+
+        custom_row = tk.Frame(naming_frame, bg=SURFACE)
+        custom_row.pack(fill="x", pady=(2, 4), padx=(20, 0))
+        tk.Label(custom_row, text=t("output_prefix") + ":", font=(FONT, 8),
+                 fg=TEXT_SEC, bg=SURFACE).pack(side="left")
+        prefix_var = tk.StringVar(value="")
+        tk.Entry(custom_row, textvariable=prefix_var, font=(FONT, 8),
+                 bg=SURFACE_VAR, fg=TEXT, relief="flat", width=12,
+                 insertbackground=TEXT).pack(side="left", padx=4)
+        tk.Label(custom_row, text=t("output_suffix") + ":", font=(FONT, 8),
+                 fg=TEXT_SEC, bg=SURFACE).pack(side="left", padx=(8, 0))
+        suffix_var = tk.StringVar(value="_clean")
+        tk.Entry(custom_row, textvariable=suffix_var, font=(FONT, 8),
+                 bg=SURFACE_VAR, fg=TEXT, relief="flat", width=12,
+                 insertbackground=TEXT).pack(side="left", padx=4)
+
+        # Preview
+        preview_lbl = tk.Label(dlg, text="", font=(FONT, 8), fg=TEXT_TER, bg=BG)
+        preview_lbl.pack(anchor="w", padx=24, pady=(4, 0))
+
+        def _update_preview(*_):
+            if items_to_save:
+                stem = items_to_save[0]["path"].stem
+                mode = naming_var.get()
+                if mode == "original":
+                    name = f"{stem}_clean.png"
+                elif mode == "backgroundremoved":
+                    name = f"{stem}_backgroundremoved.png"
+                else:
+                    name = f"{prefix_var.get()}{stem}{suffix_var.get()}.png"
+                preview_lbl.config(text=t("output_preview", name=name))
+
+        naming_var.trace_add("write", _update_preview)
+        prefix_var.trace_add("write", _update_preview)
+        suffix_var.trace_add("write", _update_preview)
+        _update_preview()
+
+        # Checkboxes
+        opts_frame = tk.Frame(dlg, bg=BG)
+        opts_frame.pack(fill="x", padx=24, pady=(8, 4))
+        date_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(opts_frame, text=t("output_date_subfolder"),
+                       variable=date_var, bg=BG, fg=TEXT,
+                       selectcolor=SURFACE_VAR, activebackground=BG,
+                       activeforeground=TEXT, font=(FONT, 9)).pack(anchor="w")
+        overwrite_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(opts_frame, text=t("output_overwrite"),
+                       variable=overwrite_var, bg=BG, fg=TEXT,
+                       selectcolor=SURFACE_VAR, activebackground=BG,
+                       activeforeground=TEXT, font=(FONT, 9)).pack(anchor="w")
+
+        # Buttons
+        btn_frame = tk.Frame(dlg, bg=BG)
+        btn_frame.pack(pady=(12, 16))
+
+        def _do_save():
+            naming = {
+                "folder": folder_var.get(),
+                "mode": naming_var.get(),
+                "prefix": prefix_var.get(),
+                "suffix": suffix_var.get(),
+                "date_subfolder": date_var.get(),
+                "overwrite": overwrite_var.get(),
+            }
+            dlg.destroy()
+            self._save_batch(items_to_save, naming)
+
+        def _do_cancel():
+            dlg.destroy()
+            self.status_lbl.config(text=t("output_cancelled"), fg=WARNING)
+
+        save_btn = AppleButton(btn_frame, text=t("output_save"),
+                               command=_do_save, style="primary",
+                               width=120, height=36, font_size=10)
+        save_btn.pack(side="left", padx=8)
+        cancel_btn = AppleButton(btn_frame, text=t("output_cancel"),
+                                 command=_do_cancel, style="secondary",
+                                 width=120, height=36, font_size=10)
+        cancel_btn.pack(side="left", padx=8)
+
+    def _save_batch(self, items, naming):
+        """Save all items with the chosen naming config."""
+        from datetime import datetime
+        out_dir = Path(naming["folder"])
+        if naming.get("date_subfolder"):
+            out_dir = out_dir / datetime.now().strftime("%Y-%m-%d")
+        try:
+            out_dir.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            self._show_error("HC-024", path=str(out_dir))
+            return
+
+        saved = 0
+        for item in items:
+            stem = item["path"].stem
+            if naming["mode"] == "original":
+                name = f"{stem}_clean.png"
+            elif naming["mode"] == "backgroundremoved":
+                name = f"{stem}_backgroundremoved.png"
+            elif naming["mode"] == "custom":
+                name = f"{naming['prefix']}{stem}{naming['suffix']}.png"
+            else:
+                name = f"{stem}_clean.png"
+
+            name = _sanitize_filename(name)
+            out_path = out_dir / name
+
+            if out_path.exists() and not naming.get("overwrite"):
+                # Add number suffix to avoid overwrite
+                base = out_path.stem
+                ext = out_path.suffix
+                counter = 1
+                while out_path.exists():
+                    out_path = out_dir / f"{base}_{counter}{ext}"
+                    counter += 1
+
+            try:
+                item["result"].save(out_path, "PNG")
+                item["out_path"] = out_path
+                saved += 1
+                self._log(f"Saved: {out_path.name}")
+            except Exception as e:
+                self._log(f"Save error {name}: {e}")
+
+        self.status_lbl.config(text=t("output_saved_count", count=saved), fg=SUCCESS)
+        self._log(t("output_saved_count", count=saved))
+
+        # Auto-open output folder
+        if saved > 0:
+            self.root.after(500, lambda: self._open_folder(out_dir))
 
     # ── Error Handling ───────────────────────────────────────────
     def _show_error(self, code, **kwargs):
@@ -2683,6 +3565,7 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         nav_labels = {
             "queue": t("nav_queue"),
             "editor": t("nav_editor"),
+            "review": t("nav_review"),
             "settings": t("nav_settings"),
             "about": t("nav_about"),
         }
@@ -2738,6 +3621,24 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
             self._theme_lbl.config(text=t("theme"))
         if hasattr(self, "_model_lbl"):
             self._model_lbl.config(text=t("ai_model"))
+        # Rebuild model combobox display names
+        if hasattr(self, "_model_combo"):
+            self._model_id_by_display = {}
+            self._model_display_by_id = {}
+            display_names = []
+            for mid in MODEL_ORDER:
+                prefix = MODEL_INFO.get(mid, mid)
+                dname = t(prefix + "_name")
+                display_names.append(dname)
+                self._model_id_by_display[dname] = mid
+                self._model_display_by_id[mid] = dname
+            self._model_combo.config(values=display_names)
+            current_id = self._model_var.get()
+            self._model_display_var.set(
+                self._model_display_by_id.get(current_id, display_names[0]))
+            self._update_model_desc()
+        if hasattr(self, "_theme_value_lbl"):
+            self._theme_value_lbl.config(text=t("dark"))
         if hasattr(self, "_afg_lbl"):
             self._afg_lbl.config(text=t("alpha_fg_label"))
         if hasattr(self, "_abg_lbl"):
@@ -2750,6 +3651,32 @@ HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发�
         # About page
         if hasattr(self, "_about_desc_lbl"):
             self._about_desc_lbl.config(text=t("about_desc"))
+
+        # Queue mode buttons
+        if hasattr(self, "_mode_auto_btn"):
+            self._mode_auto_btn.set_state(True, text=t("mode_auto"))
+            self._mode_review_btn.set_state(True, text=t("mode_review"))
+            mode = self._process_mode_var.get()
+            self._mode_desc_lbl.config(
+                text=t("mode_auto_desc") if mode == "auto" else t("mode_review_desc"))
+
+        # Review page
+        if hasattr(self, "_rev_title_lbl"):
+            self._rev_title_lbl.config(text=t("review_title"))
+        if hasattr(self, "_rev_prev_btn"):
+            self._rev_prev_btn.set_state(True, text=t("review_prev"))
+        if hasattr(self, "_rev_next_btn"):
+            self._rev_next_btn.set_state(True, text=t("review_next"))
+        if hasattr(self, "_rev_accept_btn"):
+            self._rev_accept_btn.set_state(True, text=t("review_accept"))
+        if hasattr(self, "_rev_edit_btn"):
+            self._rev_edit_btn.set_state(True, text=t("review_edit"))
+        if hasattr(self, "_rev_reject_btn"):
+            self._rev_reject_btn.set_state(True, text=t("review_reject"))
+        if hasattr(self, "_rev_save_all_btn"):
+            self._rev_save_all_btn.set_state(True, text=t("review_save_all"))
+        if hasattr(self, "_rev_keys_lbl"):
+            self._rev_keys_lbl.config(text=t("keys_hint"))
 
         # Status
         self.status_lbl.config(text="")
