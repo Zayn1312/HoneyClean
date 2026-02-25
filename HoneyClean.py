@@ -165,19 +165,23 @@ _tr("browse", "Browse", "Durchsuchen", "Parcourir", "Explorar", "\u6d4f\u89c8")
 _tr("settings_saved", "Settings saved", "Einstellungen gespeichert", "Param\u00e8tres enregistr\u00e9s", "Ajustes guardados", "\u8bbe\u7f6e\u5df2\u4fdd\u5b58")
 _tr("images_processed", "images processed", "Bilder verarbeitet", "images trait\u00e9es", "im\u00e1genes procesadas", "\u5f20\u56fe\u7247\u5df2\u5904\u7406")
 
-# ── Color Palette - Apple Dark Mode ──────────────────────────────
-BG = "#1c1c1e"
-SURFACE = "#2c2c2e"
-SURFACE_VAR = "#3a3a3c"
-SIDEBAR_BG = "#252528"
-ACCENT = "#007AFF"
-SUCCESS = "#30D158"
-WARNING = "#FFD60A"
-ERROR_CLR = "#FF453A"
-TEXT = "#FFFFFF"
-TEXT_SEC = "#98989D"
-TEXT_TER = "#636366"
-BORDER = "#3d3d40"
+# ── Color Palette — Premium Dark ────────────────────────────────
+BG = "#0f0f0f"
+BG_ALT = "#141416"
+SURFACE = "#1a1a1e"
+SURFACE_VAR = "#28282c"
+SIDEBAR_BG = "#141416"
+ACCENT = "#3a82ff"
+ACCENT_DIM = "#2a5fc0"
+ACCENT_GLOW = "#3a82ff40"
+SUCCESS = "#22c55e"
+WARNING = "#f59e0b"
+ERROR_CLR = "#ef4444"
+TEXT = "#e8e8ed"
+TEXT_SEC = "#8a8a9a"
+TEXT_TER = "#55556a"
+BORDER = "#ffffff10"
+BORDER_VISIBLE = "#2a2a30"
 FONT = "Segoe UI"
 
 # ── Error Code Registry ─────────────────────────────────────────
@@ -231,9 +235,9 @@ def make_logo(size=40):
     cx, cy, r = size//2, size//2, size//2-2
     pts = [(cx + r*math.cos(math.radians(a-90)),
             cy + r*math.sin(math.radians(a-90))) for a in range(0,360,60)]
-    d.polygon(pts, fill=ACCENT, outline="#005ec4")
+    d.polygon(pts, fill=ACCENT, outline=ACCENT_DIM)
     drop = [(cx, cy-r//2+4), (cx-5, cy+2), (cx, cy+r//3), (cx+5, cy+2)]
-    d.polygon(drop, fill="#1c1c1e")
+    d.polygon(drop, fill=BG)
     return img
 
 # ── Security Functions ───────────────────────────────────────────
@@ -376,7 +380,7 @@ def _auto_select_model():
 # ======================================================================
 
 class AppleButton(tk.Canvas):
-    """Clean rounded rectangle button with Apple design style."""
+    """Premium pill-shaped button with animated hover transitions and glow."""
 
     def __init__(self, parent, text="", command=None, style="primary",
                  width=150, height=40, font_size=11, bold=True, **kw):
@@ -395,65 +399,130 @@ class AppleButton(tk.Canvas):
         self._font = (FONT, font_size, "bold" if bold else "")
         self._enabled = True
         self._hover = False
+        self._pressed = False
+        self._anim_progress = 0.0  # 0 = normal, 1 = full hover
+        self._anim_id = None
+        self._btn_img = None
         self._draw()
         self.bind("<Enter>", self._on_enter)
         self.bind("<Leave>", self._on_leave)
-        self.bind("<Button-1>", self._on_click)
+        self.bind("<Button-1>", self._on_press)
+        self.bind("<ButtonRelease-1>", self._on_release)
         self.configure(cursor="hand2")
+
+    def _lerp_color(self, c1, c2, t_val):
+        """Linearly interpolate between two hex colors."""
+        r1, g1, b1 = int(c1[1:3], 16), int(c1[3:5], 16), int(c1[5:7], 16)
+        r2, g2, b2 = int(c2[1:3], 16), int(c2[3:5], 16), int(c2[5:7], 16)
+        r = int(r1 + (r2 - r1) * t_val)
+        g = int(g1 + (g2 - g1) * t_val)
+        b = int(b1 + (b2 - b1) * t_val)
+        return f"#{r:02x}{g:02x}{b:02x}"
+
+    def _get_colors(self):
+        """Return (fill_normal, fill_hover, fg, outline_color)."""
+        if not self._enabled:
+            return SURFACE_VAR, SURFACE_VAR, TEXT_TER, ""
+        if self._style == "primary":
+            return ACCENT, ACCENT_DIM, "#ffffff", ""
+        if self._style == "secondary":
+            return SURFACE, SURFACE_VAR, TEXT_SEC, BORDER_VISIBLE
+        if self._style == "destructive":
+            return ERROR_CLR, "#b83230", "#ffffff", ""
+        if self._style == "plain":
+            return BG, SURFACE_VAR, ACCENT, ""
+        return ACCENT, ACCENT_DIM, "#ffffff", ""
 
     def _draw(self):
         self.delete("all")
         w, h = self._cw, self._ch
-        r = 8
+        r = h // 2  # pill shape: radius = half height
 
-        if not self._enabled:
-            fill = SURFACE_VAR
-            fg = TEXT_TER
-            outline = ""
-        elif self._style == "primary":
-            fill = "#005ec4" if self._hover else ACCENT
-            fg = "#FFFFFF"
-            outline = ""
-        elif self._style == "secondary":
-            fill = SURFACE_VAR if self._hover else ""
-            fg = TEXT_SEC
-            outline = BORDER
-        elif self._style == "destructive":
-            fill = "#cc362e" if self._hover else ERROR_CLR
-            fg = "#FFFFFF"
-            outline = ""
-        elif self._style == "plain":
-            fill = SURFACE_VAR if self._hover else ""
-            fg = ACCENT
-            outline = ""
-        else:
-            fill = ACCENT
-            fg = "#FFFFFF"
-            outline = ""
+        fill_n, fill_h, fg, outline = self._get_colors()
+        fill = self._lerp_color(fill_n, fill_h, self._anim_progress) if fill_n and fill_h else fill_n
 
-        if fill:
-            self.create_rectangle(r, 0, w-r, h, fill=fill, outline="")
-            self.create_rectangle(0, r, w, h-r, fill=fill, outline="")
-            self.create_oval(0, 0, r*2, r*2, fill=fill, outline="")
-            self.create_oval(w-r*2, 0, w, r*2, fill=fill, outline="")
-            self.create_oval(0, h-r*2, r*2, h, fill=fill, outline="")
-            self.create_oval(w-r*2, h-r*2, w, h, fill=fill, outline="")
+        y_off = 1 if self._pressed and self._enabled else 0
+
+        # Render pill with PIL for smooth rounded corners + optional glow
+        pad = 6
+        img_w = w + pad * 2
+        img_h = h + pad * 2
+        img = Image.new("RGBA", (img_w, img_h), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+
+        # Glow for primary buttons on hover
+        if self._style == "primary" and self._enabled and self._anim_progress > 0.1:
+            glow_alpha = int(40 * self._anim_progress)
+            glow_expand = 3
+            draw.rounded_rectangle(
+                [pad - glow_expand, pad - glow_expand + y_off,
+                 pad + w + glow_expand, pad + h + glow_expand + y_off],
+                radius=r + glow_expand,
+                fill=(58, 130, 255, glow_alpha))
+            try:
+                img = img.filter(ImageFilter.GaussianBlur(radius=5))
+            except:
+                pass
+            draw = ImageDraw.Draw(img)
+
+        # Parse fill color for PIL
+        fr, fg_c, fb = int(fill[1:3], 16), int(fill[3:5], 16), int(fill[5:7], 16)
+        draw.rounded_rectangle(
+            [pad, pad + y_off, pad + w, pad + h + y_off],
+            radius=r, fill=(fr, fg_c, fb, 255))
+
+        # Top highlight (glass effect)
+        if self._enabled and self._anim_progress > 0.2:
+            hl_alpha = int(25 * self._anim_progress)
+            draw.rounded_rectangle(
+                [pad + 2, pad + 1 + y_off, pad + w - 2, pad + h // 2 + y_off],
+                radius=r, fill=(255, 255, 255, hl_alpha))
+
+        # Outline for secondary
         if outline:
-            self.create_rectangle(1, 1, w-1, h-1, outline=outline, width=1)
+            or_c = int(outline[1:3], 16), int(outline[3:5], 16), int(outline[5:7], 16)
+            draw.rounded_rectangle(
+                [pad, pad + y_off, pad + w, pad + h + y_off],
+                radius=r, outline=(*or_c, 80), width=1)
 
-        self.create_text(w//2, h//2, text=self._text, fill=fg, font=self._font)
+        self._btn_img = ImageTk.PhotoImage(img)
+        self.create_image(w // 2, h // 2, anchor="center", image=self._btn_img)
+        self.create_text(w // 2, h // 2 + y_off, text=self._text, fill=fg, font=self._font)
+
+    def _animate_hover(self, target):
+        diff = target - self._anim_progress
+        if abs(diff) < 0.05:
+            self._anim_progress = target
+            self._draw()
+            return
+        self._anim_progress += diff * 0.35
+        self._draw()
+        self._anim_id = self.after(16, lambda: self._animate_hover(target))
 
     def _on_enter(self, e):
         if self._enabled:
             self._hover = True
-            self._draw()
+            if self._anim_id:
+                self.after_cancel(self._anim_id)
+            self._animate_hover(1.0)
 
     def _on_leave(self, e):
         self._hover = False
-        self._draw()
+        self._pressed = False
+        if self._anim_id:
+            self.after_cancel(self._anim_id)
+        self._animate_hover(0.0)
 
-    def _on_click(self, e):
-        if self._enabled and self._command:
+    def _on_press(self, e):
+        if self._enabled:
+            self._pressed = True
+            self._draw()
+
+    def _on_release(self, e):
+        was_pressed = self._pressed
+        self._pressed = False
+        self._draw()
+        if was_pressed and self._enabled and self._command:
             self._command()
 
     def set_state(self, enabled, text=None, style=None):
@@ -463,44 +532,118 @@ class AppleButton(tk.Canvas):
         if style is not None:
             self._style = style
         self.configure(cursor="hand2" if enabled else "")
+        self._anim_progress = 0.0
         self._draw()
 
 
 class AppleProgress(tk.Canvas):
-    """Thin 4px progress bar with Apple styling."""
+    """Premium progress bar with gradient fill, shimmer animation, and glow."""
 
-    def __init__(self, parent, height=4):
+    def __init__(self, parent, height=6):
         try:
             bg = parent.cget("bg")
         except:
             bg = BG
-        super().__init__(parent, height=height, bg=bg, highlightthickness=0, bd=0)
+        super().__init__(parent, height=height + 4, bg=bg, highlightthickness=0, bd=0)
         self._ch = height
         self._value = 0
         self._max = 100
+        self._shimmer_x = -60
+        self._shimmer_active = False
+        self._bar_img = None
         self.bind("<Configure>", lambda e: self._draw())
 
     def set(self, value, maximum=None):
         self._value = value
         if maximum is not None:
             self._max = max(1, maximum)
+        pct = self._value / self._max if self._max > 0 else 0
+        if pct > 0 and not self._shimmer_active:
+            self._shimmer_active = True
+            self._animate_shimmer()
+        elif pct <= 0:
+            self._shimmer_active = False
         self._draw()
+
+    def _animate_shimmer(self):
+        if not self._shimmer_active:
+            return
+        w = self.winfo_width()
+        self._shimmer_x += 3
+        if self._shimmer_x > w + 60:
+            self._shimmer_x = -60
+        self._draw()
+        self.after(30, self._animate_shimmer)
 
     def _draw(self):
         self.delete("all")
         w = self.winfo_width()
         h = self._ch
+        pad = 2
         if w < 4:
             return
-        self.create_rectangle(0, 0, w, h, fill=SURFACE_VAR, outline="")
+
+        img = Image.new("RGBA", (w, h + pad * 2), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        radius = h // 2
+
+        # Track background
+        draw.rounded_rectangle([0, pad, w, pad + h], radius=radius,
+                               fill=(40, 40, 44, 120))
+
         pct = self._value / self._max if self._max > 0 else 0
         fw = max(0, int(w * pct))
-        if fw > 0:
-            self.create_rectangle(0, 0, fw, h, fill=ACCENT, outline="")
+        if fw > radius * 2:
+            # Gradient fill from ACCENT_DIM to ACCENT
+            for x in range(fw):
+                t_val = x / max(1, fw - 1)
+                r = int(42 + (58 - 42) * t_val)
+                g = int(95 + (130 - 95) * t_val)
+                b = int(192 + (255 - 192) * t_val)
+                draw.line([(x, pad), (x, pad + h)], fill=(r, g, b, 255))
+
+            # Re-apply rounded mask
+            mask = Image.new("L", (w, h + pad * 2), 0)
+            mask_draw = ImageDraw.Draw(mask)
+            mask_draw.rounded_rectangle([0, pad, fw, pad + h], radius=radius, fill=255)
+            bar_only = Image.new("RGBA", (w, h + pad * 2), (0, 0, 0, 0))
+            bar_only.paste(img, mask=mask)
+
+            # Composite back onto track
+            track = Image.new("RGBA", (w, h + pad * 2), (0, 0, 0, 0))
+            track_draw = ImageDraw.Draw(track)
+            track_draw.rounded_rectangle([0, pad, w, pad + h], radius=radius,
+                                         fill=(40, 40, 44, 120))
+            track.paste(bar_only, mask=bar_only.split()[3])
+            img = track
+
+            # Shimmer sweep
+            draw2 = ImageDraw.Draw(img)
+            sx = self._shimmer_x
+            if 0 < sx < fw:
+                for dx in range(-30, 30):
+                    px = sx + dx
+                    if 0 <= px < fw:
+                        alpha = int(35 * (1 - abs(dx) / 30.0))
+                        draw2.line([(px, pad), (px, pad + h)],
+                                   fill=(255, 255, 255, alpha))
+
+            # Leading edge glow
+            if fw > 4:
+                glow_x = fw - 2
+                for dx in range(-6, 6):
+                    px = glow_x + dx
+                    if 0 <= px < w:
+                        alpha = int(50 * (1 - abs(dx) / 6.0))
+                        draw2.line([(px, pad), (px, pad + h)],
+                                   fill=(58, 130, 255, alpha))
+
+        self._bar_img = ImageTk.PhotoImage(img)
+        self.create_image(0, 0, anchor="nw", image=self._bar_img)
 
 
 class SidebarItem(tk.Frame):
-    """Sidebar navigation item with icon and text."""
+    """Premium sidebar navigation item with animated indicator bar and hover."""
 
     def __init__(self, parent, icon="", text="", command=None):
         super().__init__(parent, bg=SIDEBAR_BG, cursor="hand2")
@@ -508,10 +651,16 @@ class SidebarItem(tk.Frame):
         self._selected = False
         self._icon = icon
         self._text_str = text
+        self._hover_anim = 0.0
+        self._hover_id = None
+
+        # Accent indicator bar (left edge, hidden by default)
+        self._indicator = tk.Frame(self, bg=SIDEBAR_BG, width=3)
+        self._indicator.pack(side="left", fill="y")
 
         self._icon_lbl = tk.Label(self, text=icon, font=(FONT, 13),
                                    fg=TEXT_SEC, bg=SIDEBAR_BG, width=2)
-        self._icon_lbl.pack(side="left", padx=(12, 4), pady=8)
+        self._icon_lbl.pack(side="left", padx=(9, 4), pady=8)
 
         self._text_lbl = tk.Label(self, text=text, font=(FONT, 10),
                                    fg=TEXT_SEC, bg=SIDEBAR_BG, anchor="w")
@@ -522,32 +671,66 @@ class SidebarItem(tk.Frame):
             w.bind("<Enter>", self._on_enter)
             w.bind("<Leave>", self._on_leave)
 
+    def _lerp_hex(self, c1, c2, t_val):
+        r1, g1, b1 = int(c1[1:3], 16), int(c1[3:5], 16), int(c1[5:7], 16)
+        r2, g2, b2 = int(c2[1:3], 16), int(c2[3:5], 16), int(c2[5:7], 16)
+        r = int(r1 + (r2 - r1) * t_val)
+        g = int(g1 + (g2 - g1) * t_val)
+        b = int(b1 + (b2 - b1) * t_val)
+        return f"#{r:02x}{g:02x}{b:02x}"
+
     def _on_click(self, e):
         if self._command:
             self._command()
 
+    def _animate_hover(self, target):
+        diff = target - self._hover_anim
+        if abs(diff) < 0.05:
+            self._hover_anim = target
+            self._apply_hover_bg()
+            return
+        self._hover_anim += diff * 0.3
+        self._apply_hover_bg()
+        self._hover_id = self.after(16, lambda: self._animate_hover(target))
+
+    def _apply_hover_bg(self):
+        if self._selected:
+            return
+        bg = self._lerp_hex(SIDEBAR_BG, SURFACE_VAR, self._hover_anim)
+        for w in [self, self._icon_lbl, self._text_lbl, self._indicator]:
+            w.config(bg=bg)
+
     def _on_enter(self, e):
         if not self._selected:
-            for w in [self, self._icon_lbl, self._text_lbl]:
-                w.config(bg=SURFACE)
+            if self._hover_id:
+                self.after_cancel(self._hover_id)
+            self._animate_hover(1.0)
 
     def _on_leave(self, e):
         if not self._selected:
-            for w in [self, self._icon_lbl, self._text_lbl]:
-                w.config(bg=SIDEBAR_BG)
+            if self._hover_id:
+                self.after_cancel(self._hover_id)
+            self._animate_hover(0.0)
 
     def set_selected(self, selected):
         self._selected = selected
         if selected:
-            bg = ACCENT
-            fg = "#FFFFFF"
+            bg = SURFACE_VAR
+            fg = TEXT
+            icon_fg = ACCENT
+            self._indicator.config(bg=ACCENT)
         else:
             bg = SIDEBAR_BG
             fg = TEXT_SEC
+            icon_fg = TEXT_SEC
+            self._indicator.config(bg=SIDEBAR_BG)
+            self._hover_anim = 0.0
         for w in [self, self._icon_lbl, self._text_lbl]:
             w.config(bg=bg)
-        self._icon_lbl.config(fg=fg)
+        self._icon_lbl.config(fg=icon_fg)
         self._text_lbl.config(fg=fg)
+        if not selected:
+            self._indicator.config(bg=SIDEBAR_BG)
 
     def set_text(self, text):
         self._text_str = text
@@ -555,7 +738,7 @@ class SidebarItem(tk.Frame):
 
 
 class ThumbnailGrid(tk.Frame):
-    """Scrollable grid of image thumbnails with status dots."""
+    """Premium scrollable grid with rounded thumbnails, hover effects, and pulsing status dots."""
 
     THUMB_SIZE = 64
     STATUS_COLORS = {
@@ -568,21 +751,45 @@ class ThumbnailGrid(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg=SURFACE)
         self._canvas = tk.Canvas(self, bg=SURFACE, highlightthickness=0, bd=0)
-        self._scrollbar = ttk.Scrollbar(self, orient="vertical",
-                                         command=self._canvas.yview,
-                                         style="Dark.Vertical.TScrollbar")
         self._inner = tk.Frame(self._canvas, bg=SURFACE)
         self._inner.bind("<Configure>",
                          lambda e: self._canvas.configure(scrollregion=self._canvas.bbox("all")))
         self._canvas_window = self._canvas.create_window((0, 0), window=self._inner, anchor="nw")
-        self._canvas.configure(yscrollcommand=self._scrollbar.set)
-        self._canvas.pack(side="left", fill="both", expand=True)
-        self._scrollbar.pack(side="right", fill="y")
+        self._canvas.pack(fill="both", expand=True)
+
+        # GlowScrollbar will be attached after the class is defined
+        self._scrollbar = None
 
         self._items = []
         self._thumb_refs = []
         self._cols = 4
+        self._pulse_phase = 0
         self._canvas.bind("<Configure>", self._on_resize)
+        self._canvas.bind("<MouseWheel>",
+                          lambda e: self._canvas.yview_scroll(-1 * (e.delta // 120), "units"))
+        self._start_pulse()
+
+    def _attach_scrollbar(self, sb):
+        """Attach a GlowScrollbar after construction."""
+        self._scrollbar = sb
+        self._canvas.configure(yscrollcommand=sb.attach)
+        sb.place(relx=1.0, rely=0, relheight=1.0, anchor="ne", in_=self)
+
+    def _start_pulse(self):
+        """Animate pulsing dots for 'processing' status."""
+        self._pulse_phase = (self._pulse_phase + 1) % 60
+        brightness = 0.5 + 0.5 * math.sin(self._pulse_phase * math.pi / 30)
+        for item in self._items:
+            if item["status"] == "processing":
+                r = int(58 + (130 - 58) * brightness)
+                g = int(130 + (200 - 130) * brightness)
+                b = 255
+                color = f"#{r:02x}{g:02x}{b:02x}"
+                try:
+                    item["canvas"].itemconfig(item["dot"], fill=color)
+                except:
+                    pass
+        self.after(50, self._start_pulse)
 
     def _on_resize(self, e):
         new_cols = max(1, e.width // (self.THUMB_SIZE + 8))
@@ -612,6 +819,25 @@ class ThumbnailGrid(tk.Frame):
         dot = canvas.create_oval(self.THUMB_SIZE-10, 2, self.THUMB_SIZE-2, 10,
                                  fill=dot_color, outline="")
 
+        # Hover brightness overlay tag
+        hover_overlay = None
+
+        def _on_thumb_enter(e):
+            nonlocal hover_overlay
+            if hover_overlay is None:
+                hover_overlay = canvas.create_rectangle(
+                    0, 0, self.THUMB_SIZE, self.THUMB_SIZE,
+                    fill="#ffffff", stipple="gray12", outline="")
+
+        def _on_thumb_leave(e):
+            nonlocal hover_overlay
+            if hover_overlay is not None:
+                canvas.delete(hover_overlay)
+                hover_overlay = None
+
+        canvas.bind("<Enter>", _on_thumb_enter)
+        canvas.bind("<Leave>", _on_thumb_leave)
+
         item = {"frame": frame, "canvas": canvas, "dot": dot,
                 "path": path, "status": status, "thumb_ref": None}
         self._items.append(item)
@@ -626,14 +852,27 @@ class ThumbnailGrid(tk.Frame):
         try:
             img = Image.open(path)
             img.thumbnail((self.THUMB_SIZE, self.THUMB_SIZE), Image.LANCZOS)
-            bg = Image.new("RGB", (self.THUMB_SIZE, self.THUMB_SIZE), (44, 44, 46))
+            bg = Image.new("RGBA", (self.THUMB_SIZE, self.THUMB_SIZE), (26, 26, 30, 255))
             ox = (self.THUMB_SIZE - img.size[0]) // 2
             oy = (self.THUMB_SIZE - img.size[1]) // 2
             if img.mode == "RGBA":
                 bg.paste(img, (ox, oy), mask=img.split()[3])
             else:
-                bg.paste(img, (ox, oy))
-            tk_img = ImageTk.PhotoImage(bg)
+                img_rgba = img.convert("RGBA")
+                bg.paste(img_rgba, (ox, oy), mask=img_rgba.split()[3])
+
+            # Apply rounded corners mask
+            radius = 6
+            mask = Image.new("L", (self.THUMB_SIZE, self.THUMB_SIZE), 0)
+            mask_draw = ImageDraw.Draw(mask)
+            mask_draw.rounded_rectangle(
+                [0, 0, self.THUMB_SIZE, self.THUMB_SIZE],
+                radius=radius, fill=255)
+            bg_rgb = bg.convert("RGB")
+            base = Image.new("RGB", (self.THUMB_SIZE, self.THUMB_SIZE), (26, 26, 30))
+            base.paste(bg_rgb, mask=mask)
+
+            tk_img = ImageTk.PhotoImage(base)
             self._items[idx]["thumb_ref"] = tk_img
             canvas = self._items[idx]["canvas"]
             canvas.after(0, lambda: canvas.create_image(
@@ -660,6 +899,176 @@ class ThumbnailGrid(tk.Frame):
             item["frame"].destroy()
         self._items.clear()
         self._thumb_refs.clear()
+
+
+class GlowScrollbar(tk.Canvas):
+    """Ultra-premium floating scrollbar with glow effect and auto-hide."""
+
+    def __init__(self, parent, target, orient="vertical"):
+        super().__init__(parent, highlightthickness=0, bd=0, width=6)
+        self._target = target
+        self._orient = orient
+        self._thumb_color = (255, 255, 255, 50)
+        self._thumb_hover_color = (255, 255, 255, 100)
+        self._glow_color = (0, 122, 255, 40)  # ACCENT glow
+        self._hovering = False
+        self._visible = False
+        self._hide_id = None
+        self._thumb_y = 0
+        self._thumb_h = 30
+        self._dragging = False
+        self._drag_start_y = 0
+        self._drag_start_thumb = 0
+        self._width_idle = 5
+        self._width_hover = 10
+        self._current_width = 5
+        self._thumb_img = None
+        self._glow_img = None
+        self.configure(bg=parent.cget("bg") if hasattr(parent, 'cget') else "#0f0f0f")
+
+        self.bind("<Enter>", self._on_enter)
+        self.bind("<Leave>", self._on_leave)
+        self.bind("<Button-1>", self._on_press)
+        self.bind("<B1-Motion>", self._on_drag)
+        self.bind("<ButtonRelease-1>", self._on_release)
+
+        # Bind mousewheel on target to show scrollbar
+        target.bind("<MouseWheel>", self._on_scroll_event, add="+")
+        target.bind("<Configure>", lambda e: self.after(50, self._update_thumb))
+
+    def _on_scroll_event(self, event=None):
+        self.show()
+        self._schedule_hide()
+
+    def show(self):
+        if not self._visible:
+            self._visible = True
+            self.lift()
+            self._update_thumb()
+
+    def hide(self):
+        if not self._hovering and not self._dragging:
+            self._visible = False
+            self.delete("all")
+
+    def _schedule_hide(self):
+        if self._hide_id:
+            self.after_cancel(self._hide_id)
+        self._hide_id = self.after(1800, self.hide)
+
+    def _on_enter(self, e):
+        self._hovering = True
+        if self._hide_id:
+            self.after_cancel(self._hide_id)
+        self._animate_width(self._width_hover)
+        self._update_thumb()
+
+    def _on_leave(self, e):
+        self._hovering = False
+        self._animate_width(self._width_idle)
+        self._schedule_hide()
+
+    def _animate_width(self, target_w):
+        diff = target_w - self._current_width
+        if abs(diff) < 0.5:
+            self._current_width = target_w
+            self.configure(width=int(self._current_width))
+            self._update_thumb()
+            return
+        self._current_width += diff * 0.3
+        self.configure(width=int(self._current_width))
+        self._update_thumb()
+        self.after(16, lambda: self._animate_width(target_w))
+
+    def _on_press(self, e):
+        self._dragging = True
+        self._drag_start_y = e.y
+        self._drag_start_thumb = self._thumb_y
+
+    def _on_drag(self, e):
+        if not self._dragging:
+            return
+        dy = e.y - self._drag_start_y
+        ch = self.winfo_height()
+        if ch <= 0:
+            return
+        frac = dy / ch
+        self._target.yview_moveto(max(0, min(1, self._get_view_start() + frac)))
+        self._drag_start_y = e.y
+        self._update_thumb()
+
+    def _on_release(self, e):
+        self._dragging = False
+        self._schedule_hide()
+
+    def _get_view_start(self):
+        try:
+            return float(self._target.yview()[0])
+        except:
+            return 0
+
+    def _get_view_end(self):
+        try:
+            return float(self._target.yview()[1])
+        except:
+            return 1
+
+    def _update_thumb(self):
+        if not self._visible:
+            return
+        self.delete("all")
+        ch = self.winfo_height()
+        cw = int(self._current_width)
+        if ch < 10:
+            return
+
+        view_start = self._get_view_start()
+        view_end = self._get_view_end()
+        view_span = view_end - view_start
+        if view_span >= 0.999:
+            self.delete("all")
+            return
+
+        thumb_h = max(20, int(ch * view_span))
+        thumb_y = int(view_start * ch)
+        self._thumb_y = thumb_y
+        self._thumb_h = thumb_h
+
+        # Generate thumb with PIL for rounded corners + glow
+        pad = 6
+        img_h = thumb_h + pad * 2
+        img_w = cw + pad * 2
+        img = Image.new("RGBA", (img_w, img_h), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+
+        # Glow behind thumb
+        glow_r = 3
+        gc = self._glow_color if self._hovering else (255, 255, 255, 15)
+        draw.rounded_rectangle([pad-glow_r, pad-glow_r, pad+cw+glow_r, pad+thumb_h+glow_r],
+                               radius=max(1, (cw+glow_r*2)//2), fill=gc)
+        try:
+            img = img.filter(ImageFilter.GaussianBlur(radius=4))
+        except:
+            pass
+
+        # Redraw the sharp thumb on top of blur
+        draw = ImageDraw.Draw(img)
+        tc = self._thumb_hover_color if self._hovering else self._thumb_color
+        draw.rounded_rectangle([pad, pad, pad+cw, pad+thumb_h],
+                               radius=max(1, cw//2), fill=tc)
+
+        # Top highlight line (glass effect)
+        if self._hovering:
+            draw.line([(pad+2, pad+1), (pad+cw-2, pad+1)], fill=(255, 255, 255, 60), width=1)
+
+        self._thumb_img = ImageTk.PhotoImage(img)
+        self.create_image(cw//2, thumb_y + thumb_h//2, anchor="center", image=self._thumb_img)
+
+    def attach(self, *args):
+        """Called by target widget's yscrollcommand."""
+        self.show()
+        self._update_thumb()
+        self._schedule_hide()
 
 
 # ======================================================================
@@ -733,7 +1142,7 @@ class HoneyClean:
         self._eula_win = tk.Toplevel(self.root)
         w = self._eula_win
         w.title(t("eula_title"))
-        w.geometry("600x500")
+        w.geometry("620x620")
         w.configure(bg=BG)
         w.resizable(False, False)
         w.grab_set()
@@ -741,19 +1150,21 @@ class HoneyClean:
 
         # Center on screen
         w.update_idletasks()
-        sx = (w.winfo_screenwidth() - 600) // 2
-        sy = (w.winfo_screenheight() - 500) // 2
-        w.geometry(f"600x500+{sx}+{sy}")
+        sx = (w.winfo_screenwidth() - 620) // 2
+        sy = (w.winfo_screenheight() - 620) // 2
+        w.geometry(f"620x620+{sx}+{sy}")
 
         # Title
-        tk.Label(w, text=t("eula_title"), font=(FONT, 16, "bold"),
-                 fg=TEXT, bg=BG).pack(pady=(20, 10))
+        self._eula_title_lbl = tk.Label(w, text=t("eula_title"), font=(FONT, 16, "bold"),
+                 fg=TEXT, bg=BG)
+        self._eula_title_lbl.pack(pady=(20, 10))
 
         # Language selector
         lang_frame = tk.Frame(w, bg=BG)
         lang_frame.pack(pady=(0, 10))
-        tk.Label(lang_frame, text=t("eula_language") + ":", font=(FONT, 10),
-                 fg=TEXT_SEC, bg=BG).pack(side="left", padx=(0, 8))
+        self._eula_lang_lbl = tk.Label(lang_frame, text=t("eula_language") + ":", font=(FONT, 10),
+                 fg=TEXT_SEC, bg=BG)
+        self._eula_lang_lbl.pack(side="left", padx=(0, 8))
         self._eula_lang_var = tk.StringVar(value=self.cfg.get("language", "en"))
         lang_cb = ttk.Combobox(lang_frame, textvariable=self._eula_lang_var,
                                values=["en", "de", "fr", "es", "zh"],
@@ -762,15 +1173,16 @@ class HoneyClean:
         lang_cb.bind("<<ComboboxSelected>>", self._eula_lang_change)
 
         # Scrollable EULA text
-        text_frame = tk.Frame(w, bg=SURFACE)
-        text_frame.pack(fill="both", expand=True, padx=30, pady=10)
+        text_frame = tk.Frame(w, bg=SURFACE, height=330)
+        text_frame.pack(fill="x", padx=30, pady=10)
+        text_frame.pack_propagate(False)
         self._eula_text = tk.Text(text_frame, bg=SURFACE, fg=TEXT, font=(FONT, 9),
                                    wrap="word", relief="flat", state="disabled",
                                    insertbackground=TEXT, padx=12, pady=12)
-        eula_sb = ttk.Scrollbar(text_frame, command=self._eula_text.yview)
-        eula_sb.pack(side="right", fill="y")
         self._eula_text.pack(fill="both", expand=True)
-        self._eula_text.config(yscrollcommand=eula_sb.set)
+        eula_sb = GlowScrollbar(text_frame, target=self._eula_text)
+        eula_sb.place(relx=1.0, rely=0, relheight=1.0, anchor="ne")
+        self._eula_text.config(yscrollcommand=eula_sb.attach)
         self._fill_eula_text()
 
         # Checkbox
@@ -794,12 +1206,13 @@ class HoneyClean:
                                              command=self._eula_accept)
         self._eula_continue_btn.pack(side="left", padx=10)
 
-        tk.Button(btn_frame, text=t("eula_decline"), font=(FONT, 11),
+        self._eula_decline_btn = tk.Button(btn_frame, text=t("eula_decline"), font=(FONT, 11),
                   bg=SURFACE, fg=TEXT_SEC, relief="flat", padx=30, pady=8,
-                  command=self._eula_decline).pack(side="left", padx=10)
+                  command=self._eula_decline)
+        self._eula_decline_btn.pack(side="left", padx=10)
 
-    def _fill_eula_text(self):
-        eula_content = """HONEYCLEAN - TERMS OF USE
+    _EULA_TEXTS = {
+        "en": """HONEYCLEAN — TERMS OF USE
 
 1. LAWFUL USE ONLY
 This software is provided for lawful purposes only. You agree not to use HoneyClean for any illegal activities, including but not limited to fraud, identity theft, or any activity that violates applicable laws.
@@ -819,11 +1232,102 @@ This software is released under the MIT License. You are free to use, copy, modi
 6. ETHICAL USAGE COMMITMENT
 By using HoneyClean, you commit to using this tool ethically and responsibly. You agree to respect the rights, privacy, and dignity of all individuals.
 
-By clicking "Continue", you acknowledge that you have read, understood, and agree to these terms.
-"""
+By clicking "Continue", you acknowledge that you have read, understood, and agree to these terms.""",
+
+        "de": """HONEYCLEAN — NUTZUNGSBEDINGUNGEN
+
+1. NUR RECHTMÄSSIGE NUTZUNG
+Diese Software wird ausschließlich für rechtmäßige Zwecke bereitgestellt. Sie stimmen zu, HoneyClean nicht für illegale Aktivitäten zu verwenden, einschließlich, aber nicht beschränkt auf Betrug, Identitätsdiebstahl oder Aktivitäten, die gegen geltendes Recht verstoßen.
+
+2. KEINE DEEPFAKES / KEINE BILDMANIPULATION OHNE ZUSTIMMUNG
+Sie stimmen zu, HoneyClean nicht zur Erstellung von Deepfakes oder zur Manipulation von Bildern von Personen ohne deren ausdrückliche Zustimmung zu verwenden. Die Erstellung irreführender oder schädlicher Inhalte mit dieser Software ist streng verboten.
+
+3. EIGENVERANTWORTUNG
+Sie sind allein verantwortlich für alle mit HoneyClean verarbeiteten Inhalte und dafür, dass Ihre Nutzung der Software allen geltenden Gesetzen und Vorschriften entspricht. Der Entwickler übernimmt keine Haftung für Missbrauch.
+
+4. KEINE GARANTIE
+HoneyClean wird "WIE BESEHEN" ohne jegliche Garantie bereitgestellt, weder ausdrücklich noch stillschweigend. Der Entwickler gibt keine Garantien hinsichtlich der Eignung der Software für einen bestimmten Zweck.
+
+5. MIT-LIZENZ
+Diese Software wird unter der MIT-Lizenz veröffentlicht. Sie dürfen die Software frei verwenden, kopieren, ändern, zusammenführen, veröffentlichen, verteilen, unterlizenzieren und/oder verkaufen, vorbehaltlich der Bedingungen der MIT-Lizenz.
+
+6. ETHISCHE NUTZUNGSVERPFLICHTUNG
+Durch die Nutzung von HoneyClean verpflichten Sie sich, dieses Tool ethisch und verantwortungsvoll einzusetzen. Sie stimmen zu, die Rechte, die Privatsphäre und die Würde aller Personen zu respektieren.
+
+Durch Klicken auf "Weiter" bestätigen Sie, dass Sie diese Bedingungen gelesen, verstanden und akzeptiert haben.""",
+
+        "fr": """HONEYCLEAN — CONDITIONS D'UTILISATION
+
+1. UTILISATION LÉGALE UNIQUEMENT
+Ce logiciel est fourni uniquement à des fins légales. Vous acceptez de ne pas utiliser HoneyClean pour des activités illégales, y compris, mais sans s'y limiter, la fraude, le vol d'identité ou toute activité enfreignant les lois applicables.
+
+2. PAS DE DEEPFAKES / PAS DE MANIPULATION D'IMAGES SANS CONSENTEMENT
+Vous acceptez de ne pas utiliser HoneyClean pour créer des deepfakes ou manipuler des images de personnes sans leur consentement explicite. La création de contenus trompeurs ou nuisibles à l'aide de ce logiciel est strictement interdite.
+
+3. RESPONSABILITÉ DE L'UTILISATEUR
+Vous êtes seul responsable de tout contenu traité par HoneyClean et de la conformité de votre utilisation du logiciel avec toutes les lois et réglementations applicables. Le développeur décline toute responsabilité en cas de mauvaise utilisation.
+
+4. AUCUNE GARANTIE
+HoneyClean est fourni "TEL QUEL" sans garantie d'aucune sorte, expresse ou implicite. Le développeur ne garantit pas l'adéquation du logiciel à un usage particulier.
+
+5. LICENCE MIT
+Ce logiciel est publié sous la licence MIT. Vous êtes libre d'utiliser, copier, modifier, fusionner, publier, distribuer, sous-licencier et/ou vendre des copies du logiciel, sous réserve des conditions de la licence MIT.
+
+6. ENGAGEMENT D'UTILISATION ÉTHIQUE
+En utilisant HoneyClean, vous vous engagez à utiliser cet outil de manière éthique et responsable. Vous acceptez de respecter les droits, la vie privée et la dignité de toutes les personnes.
+
+En cliquant sur "Continuer", vous reconnaissez avoir lu, compris et accepté ces conditions.""",
+
+        "es": """HONEYCLEAN — TÉRMINOS DE USO
+
+1. SOLO USO LEGAL
+Este software se proporciona únicamente para fines legales. Usted acepta no utilizar HoneyClean para actividades ilegales, incluyendo, entre otras, fraude, robo de identidad o cualquier actividad que viole las leyes aplicables.
+
+2. SIN DEEPFAKES / SIN MANIPULACIÓN DE IMÁGENES SIN CONSENTIMIENTO
+Usted acepta no utilizar HoneyClean para crear deepfakes o manipular imágenes de personas sin su consentimiento explícito. La creación de contenido engañoso o dañino utilizando este software está estrictamente prohibida.
+
+3. RESPONSABILIDAD DEL USUARIO
+Usted es el único responsable de todo el contenido procesado a través de HoneyClean y de garantizar que su uso del software cumple con todas las leyes y regulaciones aplicables. El desarrollador no asume responsabilidad por el uso indebido.
+
+4. SIN GARANTÍA
+HoneyClean se proporciona "TAL CUAL" sin garantía de ningún tipo, expresa o implícita. El desarrollador no garantiza la idoneidad del software para ningún propósito particular.
+
+5. LICENCIA MIT
+Este software se publica bajo la Licencia MIT. Usted es libre de usar, copiar, modificar, fusionar, publicar, distribuir, sublicenciar y/o vender copias del software, sujeto a las condiciones de la Licencia MIT.
+
+6. COMPROMISO DE USO ÉTICO
+Al utilizar HoneyClean, se compromete a usar esta herramienta de manera ética y responsable. Acepta respetar los derechos, la privacidad y la dignidad de todas las personas.
+
+Al hacer clic en "Continuar", reconoce que ha leído, comprendido y aceptado estos términos.""",
+
+        "zh": """HONEYCLEAN — 使用条款
+
+1. 仅限合法使用
+本软件仅供合法用途使用。您同意不将 HoneyClean 用于任何非法活动，包括但不限于欺诈、身份盗窃或任何违反适用法律的活动。
+
+2. 禁止深度伪造 / 禁止未经同意的图像操纵
+您同意不使用 HoneyClean 创建深度伪造内容或在未获得个人明确同意的情况下操纵其图像。严禁使用本软件创建误导性或有害内容。
+
+3. 用户责任
+您对通过 HoneyClean 处理的所有内容承担全部责任，并确保您对软件的使用符合所有适用的法律法规。开发者不承担因滥用而产生的任何责任。
+
+4. 无担保
+HoneyClean 按"原样"提供，不提供任何明示或暗示的担保。开发者不对软件适用于任何特定目的作出保证。
+
+5. MIT 许可证
+本软件根据 MIT 许可证发布。您可以自由使用、复制、修改、合并、发布、分发、再许可和/或出售本软件的副本，但须遵守 MIT 许可证的条件。
+
+6. 道德使用承诺
+使用 HoneyClean 即表示您承诺以道德和负责任的方式使用此工具。您同意尊重所有个人的权利、隐私和尊严。
+
+点击"继续"即表示您确认已阅读、理解并同意这些条款。""",
+    }
+
+    def _fill_eula_text(self):
+        content = self._EULA_TEXTS.get(_current_lang, self._EULA_TEXTS["en"])
         self._eula_text.config(state="normal")
         self._eula_text.delete("1.0", "end")
-        self._eula_text.insert("1.0", eula_content)
+        self._eula_text.insert("1.0", content)
         self._eula_text.config(state="disabled")
 
     def _eula_lang_change(self, event=None):
@@ -831,8 +1335,12 @@ By clicking "Continue", you acknowledge that you have read, understood, and agre
         set_language(lang)
         self.cfg["language"] = lang
         self._eula_win.title(t("eula_title"))
+        self._eula_title_lbl.config(text=t("eula_title"))
+        self._eula_lang_lbl.config(text=t("eula_language") + ":")
         self._eula_cb.config(text=t("eula_checkbox"))
         self._eula_continue_btn.config(text=t("eula_continue"))
+        self._eula_decline_btn.config(text=t("eula_decline"))
+        self._fill_eula_text()
 
     def _eula_check_toggle(self):
         if self._eula_agree.get():
@@ -1076,29 +1584,80 @@ By clicking "Continue", you acknowledge that you have read, understood, and agre
                                    fg=TEXT_SEC, bg=BG)
         self.status_lbl.pack(pady=(0, 2))
 
-        # Footer
-        self._footer = tk.Frame(mf, bg=SURFACE, height=24)
+        # Footer — premium style with accent gradient separator
+        self._footer = tk.Frame(mf, bg=BG, height=28)
         self._footer.pack(fill="x", side="bottom")
         self._footer.pack_propagate(False)
+        # 1px gradient accent separator at top
+        self._footer_sep = tk.Canvas(self._footer, height=1, bg=BG,
+                                      highlightthickness=0, bd=0)
+        self._footer_sep.pack(fill="x")
+        self._footer_sep.bind("<Configure>", self._draw_footer_sep)
         self._footer_lbl = tk.Label(self._footer, text=t("footer"),
-                                     font=(FONT, 8), fg=TEXT_TER, bg=SURFACE)
+                                     font=(FONT, 8), fg=TEXT_TER, bg=BG)
         self._footer_lbl.pack(expand=True)
 
-        # Debug Console (hidden by default)
-        self.debug_frame = tk.Frame(mf, bg="#111113")
-        self.debug_text = tk.Text(self.debug_frame, bg="#111113", fg=SUCCESS,
-                                   font=("Consolas", 8), height=6, relief="flat",
+        # Debug Console — premium look (hidden by default)
+        self.debug_frame = tk.Frame(mf, bg="#0a0a0c")
+        # Top accent gradient border
+        self._debug_top_bar = tk.Canvas(self.debug_frame, height=2, bg="#0a0a0c",
+                                         highlightthickness=0, bd=0)
+        self._debug_top_bar.pack(fill="x")
+        self._debug_top_bar.bind("<Configure>", self._draw_debug_top_bar)
+        # Console header label
+        tk.Label(self.debug_frame, text="CONSOLE", font=(FONT, 7, "bold"),
+                 fg=TEXT_TER, bg="#0a0a0c", anchor="w").pack(fill="x", padx=8, pady=(2, 0))
+        _mono = "Consolas"
+        import tkinter.font as tkfont
+        for _fam in ["JetBrains Mono", "Cascadia Code", "Consolas"]:
+            if _fam in tkfont.families():
+                _mono = _fam
+                break
+        self.debug_text = tk.Text(self.debug_frame, bg="#0a0a0c", fg=SUCCESS,
+                                   font=(_mono, 8),
+                                   height=6, relief="flat",
                                    state="disabled", insertbackground=SUCCESS,
                                    selectbackground=ACCENT)
         self.debug_text.pack(fill="both", expand=True, padx=4, pady=2)
-        dbsb = ttk.Scrollbar(self.debug_frame, command=self.debug_text.yview)
-        dbsb.pack(side="right", fill="y")
-        self.debug_text.config(yscrollcommand=dbsb.set)
+        self._debug_sb = GlowScrollbar(self.debug_frame, target=self.debug_text)
+        self._debug_sb.place(relx=1.0, rely=0, relheight=1.0, anchor="ne")
+        self.debug_text.config(yscrollcommand=self._debug_sb.attach)
         if self.cfg.get("debug"):
             self.debug_frame.pack(fill="x", padx=12, pady=(0, 4), before=self._footer)
 
         # Show default page
         self._show_page("queue")
+
+    def _draw_debug_top_bar(self, event=None):
+        c = self._debug_top_bar
+        c.delete("all")
+        w = c.winfo_width()
+        if w < 4:
+            return
+        for x in range(w):
+            t_val = x / max(1, w - 1)
+            r = int(58 * (1 - abs(t_val - 0.3) * 2))
+            g = int(130 * (1 - abs(t_val - 0.3) * 2))
+            b = int(255 * (1 - abs(t_val - 0.3) * 2))
+            r, g, b = max(0, r), max(0, g), max(0, b)
+            if r + g + b > 5:
+                c.create_line(x, 0, x, 2, fill=f"#{r:02x}{g:02x}{b:02x}")
+
+    def _draw_footer_sep(self, event=None):
+        c = self._footer_sep
+        c.delete("all")
+        w = c.winfo_width()
+        if w < 4:
+            return
+        # Gradient: transparent → accent → transparent
+        mid = w // 2
+        for x in range(w):
+            dist = abs(x - mid) / max(1, mid)
+            alpha = int(60 * (1 - dist * dist))
+            if alpha > 0:
+                r, g, b = 58, 130, 255
+                hex_c = f"#{int(r*alpha/255):02x}{int(g*alpha/255):02x}{int(b*alpha/255):02x}"
+                c.create_line(x, 0, x, 1, fill=hex_c)
 
     # ── Show Page ────────────────────────────────────────────────
     def _show_page(self, page_name):
@@ -1267,7 +1826,7 @@ By clicking "Continue", you acknowledge that you have read, understood, and agre
         self._before_lbl = tk.Label(before_inner, text=t("before_label"), font=(FONT, 8, "bold"),
                  fg=ERROR_CLR, bg=SURFACE)
         self._before_lbl.pack(pady=3)
-        self.before_cv = tk.Canvas(before_inner, bg="#1c1c1e", highlightthickness=0)
+        self.before_cv = tk.Canvas(before_inner, bg=BG, highlightthickness=0)
         self.before_cv.pack(fill="both", expand=True, padx=2, pady=(0, 2))
 
         # AFTER
@@ -1289,7 +1848,7 @@ By clicking "Continue", you acknowledge that you have read, understood, and agre
                        command=self._refresh_after)
         self._checker_cb.pack(side="right", padx=6)
 
-        self.after_cv = tk.Canvas(after_inner, bg="#1c1c1e", highlightthickness=0,
+        self.after_cv = tk.Canvas(after_inner, bg=BG, highlightthickness=0,
                                   cursor="crosshair")
         self.after_cv.pack(fill="both", expand=True, padx=2, pady=(0, 2))
         self.after_cv.bind("<B1-Motion>", self._on_canvas_draw)
@@ -1299,15 +1858,16 @@ By clicking "Continue", you acknowledge that you have read, understood, and agre
     def _build_settings_page(self, parent):
         # Scrollable settings
         canvas = tk.Canvas(parent, bg=BG, highlightthickness=0, bd=0)
-        scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview,
-                                   style="Dark.Vertical.TScrollbar")
         settings_inner = tk.Frame(canvas, bg=BG)
         settings_inner.bind("<Configure>",
                             lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
         canvas.create_window((0, 0), window=settings_inner, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        canvas.pack(fill="both", expand=True)
+        self._settings_sb = GlowScrollbar(parent, target=canvas)
+        self._settings_sb.place(relx=1.0, rely=0, relheight=1.0, anchor="ne")
+        canvas.configure(yscrollcommand=self._settings_sb.attach)
+        canvas.bind("<MouseWheel>",
+                    lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))
 
         self._settings_title_lbl = tk.Label(settings_inner, text=t("settings_title"),
                  font=(FONT, 16, "bold"), fg=TEXT, bg=BG)
@@ -1950,7 +2510,7 @@ By clicking "Continue", you acknowledge that you have read, understood, and agre
             img = Image.open(path).convert("RGBA")
             self._orig_before = img
             disp = self._fit(img, self.before_cv)
-            bg = Image.new("RGB", disp.size, (28, 28, 30))
+            bg = Image.new("RGB", disp.size, (15, 15, 15))
             bg.paste(disp, mask=disp.split()[3])
             self._tk_before = ImageTk.PhotoImage(bg)
             self.before_cv.delete("all")
@@ -1976,7 +2536,7 @@ By clicking "Continue", you acknowledge that you have read, understood, and agre
         if self.checker_var.get():
             bg = self._checker(disp.size)
         else:
-            bg = Image.new("RGB", disp.size, (28, 28, 30))
+            bg = Image.new("RGB", disp.size, (15, 15, 15))
         bg.paste(disp, mask=disp.split()[3])
         self._tk_after = ImageTk.PhotoImage(bg)
         self.after_cv.delete("all")
