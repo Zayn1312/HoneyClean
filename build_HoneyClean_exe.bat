@@ -25,6 +25,8 @@ py -m PyInstaller ^
   --hidden-import tkinter ^
   --hidden-import tkinterdnd2 ^
   --hidden-import multiprocessing ^
+  --hidden-import zipfile ^
+  --hidden-import pymatting ^
   --collect-all rembg ^
   --collect-all tkinterdnd2 ^
   --clean ^
