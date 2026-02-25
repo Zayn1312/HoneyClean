@@ -5,7 +5,10 @@ cd /d "%~dp0"
 
 echo.
 echo  [1/3] Installiere Abhaengigkeiten...
-py -m pip install pyinstaller tkinterdnd2 -q
+py -m pip install pyinstaller tkinterdnd2 customtkinter -q
+
+REM Find customtkinter package path for --add-data
+for /f "delims=" %%i in ('py -c "import customtkinter; import os; print(os.path.dirname(customtkinter.__file__))"') do set CTK_PATH=%%i
 
 echo.
 echo  [2/3] Baue HoneyClean.exe (onedir + windowed)...
@@ -24,11 +27,14 @@ py -m PyInstaller ^
   --hidden-import numpy ^
   --hidden-import tkinter ^
   --hidden-import tkinterdnd2 ^
+  --hidden-import customtkinter ^
   --hidden-import multiprocessing ^
   --hidden-import zipfile ^
   --hidden-import pymatting ^
   --collect-all rembg ^
   --collect-all tkinterdnd2 ^
+  --collect-all customtkinter ^
+  --add-data "%CTK_PATH%;customtkinter" ^
   --clean ^
   --noconfirm ^
   HoneyClean.py

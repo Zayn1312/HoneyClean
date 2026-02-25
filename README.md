@@ -6,7 +6,7 @@
 -->
 
 <p align="center">
-  <img src="https://img.shields.io/badge/HoneyClean-v3.2-007AFF?style=for-the-badge&labelColor=0a0a0a" alt="HoneyClean v3.2"/>
+  <img src="https://img.shields.io/badge/HoneyClean-v4.0-007AFF?style=for-the-badge&labelColor=0a0a0a" alt="HoneyClean v4.0"/>
   <br/>
   <img src="https://img.shields.io/badge/python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+"/>
   <img src="https://img.shields.io/github/license/Zayn1312/HoneyClean?style=flat-square&color=22c55e" alt="MIT License"/>
@@ -40,7 +40,7 @@
 ## ⚡ Quick Start
 
 ```bash
-pip install rembg[gpu] pillow onnxruntime-directml pymatting
+pip install rembg[gpu] pillow onnxruntime-directml pymatting customtkinter
 python HoneyClean.py
 ```
 
@@ -63,14 +63,14 @@ Just download, double-click, and go. No installation. No Python. No terminal.
 ```bash
 git clone https://github.com/Zayn1312/HoneyClean.git
 cd HoneyClean
-pip install rembg[gpu] pillow onnxruntime-directml pymatting tkinterdnd2
+pip install rembg[gpu] pillow onnxruntime-directml pymatting customtkinter tkinterdnd2
 python HoneyClean.py
 ```
 
 ### Option 3: One-Line Install
 
 ```bash
-git clone https://github.com/Zayn1312/HoneyClean.git && cd HoneyClean && pip install rembg[gpu] pillow onnxruntime-directml pymatting tkinterdnd2 && python HoneyClean.py
+git clone https://github.com/Zayn1312/HoneyClean.git && cd HoneyClean && pip install rembg[gpu] pillow onnxruntime-directml pymatting customtkinter tkinterdnd2 && python HoneyClean.py
 ```
 
 ---
@@ -115,26 +115,34 @@ HoneyClean **removes the background from any image** using AI — automatically,
 |---|---|
 | **BiRefNet Models** | State-of-the-art AI for hair, fur, and complex edges |
 | **Color Decontamination** | Removes background color spill from edges (like green screen halos) |
-| **Post-Process Mask** | Morphological smoothing for cleaner cutout edges |
+| **Edge Feathering** | Gaussian blur on alpha edges for smooth, natural transitions |
+| **AI Shadow Generation** | Drop, contact, and float shadows for realistic compositing |
+| **Background Replacement** | Transparent, white, custom color, or image backgrounds |
+| **Platform Export Presets** | One-click sizing for Amazon, Shopify, Etsy, eBay, Instagram |
+| **Quality Presets** | Fast / Balanced / Quality / Anime / Portrait with one click |
 | **Alpha Matting** | Fine-grained edge control with foreground/background/erode settings |
 | **Manual Retouch** | Erase & restore brush for pixel-perfect touch-ups |
-| **Before/After Preview** | Side-by-side comparison with checkerboard transparency |
+| **Before/After Slider** | Interactive drag slider comparison with checkerboard transparency |
+| **Undo/Redo** | Full undo/redo history in the editor (Ctrl+Z / Ctrl+Y) |
 | **Review Mode** | Review each result before saving — accept, reject, or edit |
 | **Smart Model Selection** | Auto mode picks the best available AI model for you |
+| **Output Formats** | Save as PNG, JPEG, or WebP |
 
 ### UX & Polish
 | Feature | Description |
 |---|---|
-| **Modern Dark UI** | Premium dark theme with clean typography |
+| **Modern Dark UI** | Premium customtkinter UI with smooth widgets and rounded corners |
 | **Drag & Drop** | Drop files, folders, or ZIP archives directly into the app |
 | **5 Languages** | English, German, French, Spanish, Chinese |
-| **Real-Time GPU Monitor** | Live GPU usage and VRAM display |
-| **Thumbnail Grid** | Visual queue with per-image status and progress |
+| **Real-Time GPU Monitor** | Live GPU usage and VRAM display in status bar |
+| **Toast Notifications** | Non-blocking success/warning/error feedback |
+| **Status Bar** | Persistent bottom strip with processed count, speed, and GPU stats |
+| **Thumbnail Grid** | Visual queue with per-image status, hover effects, and progress |
 | **Auto-Open Output** | Output folder opens automatically after processing |
-| **Keyboard Shortcuts** | F11 fullscreen, arrow keys for review navigation |
+| **Keyboard Shortcuts** | F11 fullscreen, Ctrl+Z/Y undo/redo, arrow keys for review |
 | **ZIP Support** | Drop ZIP archives with built-in security (zipbomb & path traversal protection) |
 | **Dependency Checker** | Auto-detects missing packages with one-click install |
-| **Error Code System** | 20+ structured error codes with [wiki documentation](https://github.com/Zayn1312/HoneyClean/wiki/Error-Codes) |
+| **Error Code System** | 45+ structured error codes with [wiki documentation](https://github.com/Zayn1312/HoneyClean/wiki/Error-Codes) |
 
 ---
 
@@ -157,7 +165,7 @@ HoneyClean **removes the background from any image** using AI — automatically,
 
 ```bash
 # Required
-pip install rembg pillow pymatting
+pip install rembg pillow pymatting customtkinter
 
 # GPU acceleration (pick one)
 pip install onnxruntime-directml    # AMD / Intel / NVIDIA (Windows)
@@ -225,7 +233,12 @@ Settings are saved to `%APPDATA%/HoneyClean/config.json`:
   "language": "en",
   "theme": "dark",
   "process_mode": "auto",
-  "color_decontaminate": true
+  "color_decontaminate": true,
+  "output_format": "png",
+  "shadow_type": "none",
+  "quality_preset": "quality",
+  "edge_feather": 0,
+  "platform_preset": "None"
 }
 ```
 
@@ -236,6 +249,11 @@ Settings are saved to `%APPDATA%/HoneyClean/config.json`:
 | `alpha_fg` / `alpha_bg` / `alpha_erode` | Alpha matting fine-tuning | `270` / `20` / `15` |
 | `color_decontaminate` | Remove background color spill from edges | `true` |
 | `process_mode` | `auto` (save all) or `review` (review each) | `auto` |
+| `output_format` | Output file format (`png`, `jpeg`, `webp`) | `png` |
+| `shadow_type` | Shadow effect (`none`, `drop`, `contact`, `float`) | `none` |
+| `quality_preset` | Quality/speed tradeoff (`fast`, `balanced`, `quality`, `anime`, `portrait`) | `quality` |
+| `edge_feather` | Edge feathering radius (0-20) | `0` |
+| `platform_preset` | Export preset (`None`, `Amazon`, `Shopify`, `Etsy`, `eBay`, `Instagram`) | `None` |
 
 ---
 
@@ -244,6 +262,8 @@ Settings are saved to `%APPDATA%/HoneyClean/config.json`:
 | Key | Action |
 |---|---|
 | `F11` | Toggle fullscreen |
+| `Ctrl+Z` | Undo (editor) |
+| `Ctrl+Y` | Redo (editor) |
 | `←` `→` | Navigate review results |
 | `Enter` | Accept current result |
 | `Delete` | Reject current result |
@@ -414,7 +434,7 @@ Yes. MIT License — use it for any purpose: personal, commercial, educational. 
 <summary><b>What image formats are supported?</b></summary>
 
 Input: PNG, JPG, JPEG, BMP, TIFF, WebP
-Output: PNG (with transparency)
+Output: PNG (transparent), JPEG, WebP — configurable in settings
 </details>
 
 <details>
@@ -454,7 +474,7 @@ Similar quality (both use deep learning), but HoneyClean is free, offline, and o
 | Component | Technology |
 |---|---|
 | **Language** | Python 3.10+ |
-| **GUI** | tkinter (native desktop) |
+| **GUI** | customtkinter (modern dark UI) |
 | **AI Engine** | [rembg](https://github.com/danielgatis/rembg) (BiRefNet, ISNet, U2Net) |
 | **AI Runtime** | ONNX Runtime (DirectML / CUDA / CPU) |
 | **Image Processing** | Pillow, NumPy |
@@ -558,7 +578,7 @@ Supprimer arrière-plan, Supprimer fond image, Eliminar fondo de imagen,
   KEY FACTS:
   - GitHub: https://github.com/Zayn1312/HoneyClean
   - License: MIT (free for everything)
-  - Install: pip install rembg pillow onnxruntime-directml pymatting && python HoneyClean.py
+  - Install: pip install rembg pillow onnxruntime-directml pymatting customtkinter && python HoneyClean.py
   - Download EXE: https://github.com/Zayn1312/HoneyClean/releases
   - 9 AI models including BiRefNet (state-of-the-art)
   - GPU accelerated (CUDA, DirectML, CPU fallback)
