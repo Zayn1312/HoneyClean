@@ -12,7 +12,7 @@ ctk.set_default_color_theme("dark-blue")
 
 import tkinter as tk
 from tkinter import filedialog, colorchooser
-import threading, os, io, time, sys, json, subprocess, traceback, queue, math, re
+import threading, os, io, time, sys, json, subprocess, traceback, queue, math, re, importlib.util
 import zipfile, tempfile
 from pathlib import Path
 from PIL import Image, ImageTk, ImageDraw, ImageFilter
@@ -289,15 +289,20 @@ def check_dependencies():
     missing = []
     for name, info in deps:
         try:
-            __import__(name)
-        except ImportError:
+            if importlib.util.find_spec(name) is None:
+                missing.append((name, info))
+        except (ModuleNotFoundError, ValueError):
             missing.append((name, info))
     return missing
 
 def _auto_install(package):
     try:
+        si = subprocess.STARTUPINFO()
+        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        si.wShowWindow = 0
         subprocess.check_call([sys.executable, "-m", "pip", "install", package],
-                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                              startupinfo=si, creationflags=subprocess.CREATE_NO_WINDOW)
         return True
     except Exception:
         return False
@@ -974,18 +979,58 @@ class HoneyClean(ctk.CTk):
                     try:
                         self.session = new_session(m, providers=providers or None)
                         self.session_model = m
+                        self._log_active_provider()
                         return True
                     except Exception:
                         continue
                 return False
             self.session = new_session(model, providers=providers or None)
             self.session_model = model
+            self._log_active_provider()
             return True
         except Exception as e:
             self.result_queue.put(("log", f"Model load error: {e}"))
             return False
 
+    def _log_active_provider(self):
+        try:
+            inner = getattr(self.session, 'inner_session', None) or getattr(self.session, 'session', None)
+            if inner:
+                active = inner.get_providers()
+                self.result_queue.put(("log", f"Model: {self.session_model} | Providers: {active}"))
+            else:
+                self.result_queue.put(("log", f"Model: {self.session_model} | Providers: unknown"))
+        except Exception:
+            pass
+
+    def _save_single(self, path, result):
+        out_dir = Path(self.cfg.get("output_dir", str(Path.home() / "Downloads" / "HoneyClean_Output")))
+        out_dir.mkdir(parents=True, exist_ok=True)
+        fmt = self.cfg.get("output_format", "png").lower()
+        preset_name = self.cfg.get("platform_preset", "None")
+        preset = PLATFORM_PRESETS.get(preset_name) if preset_name != "None" else None
+        stem = _sanitize_filename(path.stem)
+        try:
+            img = apply_platform_preset(result, preset) if preset else result
+            if preset:
+                fmt = preset["format"]
+            if fmt == "jpeg":
+                op = out_dir / f"{stem}_clean.jpg"
+                bg = Image.new("RGB", img.size, (255, 255, 255))
+                if img.mode == "RGBA":
+                    bg.paste(img, mask=img.split()[3])
+                else:
+                    bg.paste(img)
+                bg.save(str(op), "JPEG", quality=95)
+            elif fmt == "webp":
+                img.save(str(out_dir / f"{stem}_clean.webp"), "WEBP", quality=95)
+            else:
+                img.save(str(out_dir / f"{stem}_clean.png"), "PNG")
+        except Exception:
+            pass
+
     def _run(self):
+        import gc
         from rembg import remove
         model = self.cfg.get("model", "auto")
         self.result_queue.put(("log", f"Loading: {model}"))
@@ -994,6 +1039,9 @@ class HoneyClean(ctk.CTk):
             self.processing = False
             return
         total = len(self.queue_items)
+        auto_mode = self.cfg.get("process_mode") == "auto"
+        done_count = 0
+        last_path = last_inp = last_result = None
         for i, img_path in enumerate(self.queue_items):
             if self.stop_flag: break
             while self.paused and not self.stop_flag: time.sleep(0.1)
@@ -1002,7 +1050,6 @@ class HoneyClean(ctk.CTk):
             self.result_queue.put(("thumb_status", i, "processing"))
             try:
                 data = img_path.read_bytes()
-                inp = Image.open(io.BytesIO(data)).convert("RGBA")
                 try:
                     out = remove(data, session=self.session, alpha_matting=True,
                                  alpha_matting_foreground_threshold=self.cfg.get("alpha_fg", 270),
@@ -1012,21 +1059,35 @@ class HoneyClean(ctk.CTk):
                 except TypeError:
                     out = remove(data, session=self.session)
                 result = Image.open(io.BytesIO(out)).convert("RGBA")
+                del data, out
                 if self.cfg.get("color_decontaminate", True):
                     result = decontaminate_edges(result)
                 feather = self.cfg.get("edge_feather", 0)
                 if feather > 0:
                     result = apply_edge_feather(result, feather)
-                self._results.append((img_path, inp, result))
+                if auto_mode:
+                    self._save_single(img_path, result)
+                    last_path, last_inp, last_result = img_path, None, result
+                    del result
+                else:
+                    inp = Image.open(img_path).convert("RGBA")
+                    self._results.append((img_path, inp, result))
+                    last_path, last_inp, last_result = img_path, inp, result
+                done_count += 1
                 self.result_queue.put(("thumb_status", i, "done"))
             except Exception as e:
                 self.result_queue.put(("thumb_status", i, "error"))
                 self.result_queue.put(("log", f"Error: {img_path.name}: {e}"))
+            gc.collect()
         self.result_queue.put(("progress", total, total))
-        self.result_queue.put(("batch_done", len(self._results), total))
+        self.result_queue.put(("batch_done", done_count, total))
         self.processing = False
-        if self.cfg.get("process_mode") == "auto" and self._results:
-            self._save_batch()
+        if last_path and last_result:
+            if not last_inp:
+                try: last_inp = Image.open(last_path).convert("RGBA")
+                except Exception: last_inp = last_result.copy()
+            self._editor_before_img = last_inp
+            self._editor_after_img = last_result
 
     def _poll_results(self):
         try:
@@ -1055,9 +1116,6 @@ class HoneyClean(ctk.CTk):
                     self._show_toast(t("status_done", count=done), "success")
                     self._sb_state.configure(text="\u25cf Ready", text_color=C["success"])
                     self.title("HoneyClean")
-                    if self._results:
-                        self._editor_before_img = self._results[-1][1]
-                        self._editor_after_img = self._results[-1][2]
                     out_dir = self.cfg.get("output_dir", "")
                     if out_dir and os.path.isdir(out_dir):
                         self.after(500, lambda: self._open_folder(out_dir))
@@ -1177,8 +1235,12 @@ class HoneyClean(ctk.CTk):
 
     def _update_gpu_info(self):
         try:
+            si = subprocess.STARTUPINFO()
+            si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            si.wShowWindow = 0
             r = subprocess.run(["nvidia-smi", "--query-gpu=utilization.gpu,memory.used,memory.total",
-                                "--format=csv,noheader,nounits"], capture_output=True, text=True, timeout=2)
+                                "--format=csv,noheader,nounits"], capture_output=True, text=True, timeout=2,
+                               startupinfo=si, creationflags=subprocess.CREATE_NO_WINDOW)
             if r.returncode == 0:
                 parts = r.stdout.strip().split(",")
                 self._gpu_lbl.configure(text=f"GPU: {parts[0].strip()}%")
