@@ -136,7 +136,7 @@ Settings are saved to `%APPDATA%/HoneyClean/config.json`:
 
 ## Credits
 
-Built by **[HoneyDev]([https://github.com/Zayn1312]** with AI-powered background removal by [rembg](https://github.com/danielgatis/rembg).
+Built by **[https://github.com/Zayn1312]** with AI-powered background removal by [rembg](https://github.com/danielgatis/rembg).
 
 ---
 
