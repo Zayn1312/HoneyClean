@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+@theme {
+  /* Honey amber scale */
+  --color-honey-50: #fdf8ed;
+  --color-honey-100: #f9eccc;
+  --color-honey-200: #f2d794;
+  --color-honey-300: #ebc25c;
+  --color-honey-400: #d9a33c;
+  --color-honey-500: #c48a20;
+  --color-honey-600: #a06b18;
+  --color-honey-700: #7d5214;
+  --color-honey-800: #5a3a10;
+  --color-honey-900: #38230a;
+
+  /* Void dark scale */
+  --color-void-400: #4a4a50;
+  --color-void-500: #35353a;
+  --color-void-600: #27272c;
+  --color-void-700: #1c1c20;
+  --color-void-800: #131316;
+  --color-void-900: #0a0a0c;
+
+  /* Ink text scale */
+  --color-ink-100: #f5f5f5;
+  --color-ink-200: #e0e0e0;
+  --color-ink-300: #b0b0b0;
+  --color-ink-400: #808080;
+  --color-ink-500: #606060;
+
+  /* Font families */
+  --font-heading: "Space Grotesk", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-void-900);
+  color: var(--color-honey-200);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-void-500);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-void-400);
+}
+
+/* Font headings */
+.font-heading {
+  font-family: var(--font-heading);
+}

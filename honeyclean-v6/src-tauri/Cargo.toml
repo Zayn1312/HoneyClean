@@ -1,0 +1,22 @@
+[package]
+name = "honeyclean-v6"
+version = "6.0.0"
+description = "HoneyClean v6.0 — AI Background Removal"
+authors = ["Zayn1312"]
+edition = "2021"
+
+[lib]
+name = "honeyclean_v6_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["devtools"] }
+tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+uuid = { version = "1", features = ["v4"] }
