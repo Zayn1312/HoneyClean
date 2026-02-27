@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { listen } from "@tauri-apps/api/event";
-import { convertFileSrc } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Upload, FolderPlus, Trash2, Play, Pause, Square, Image, Film } from "lucide-react";
 import { v4 as uuid } from "uuid";
@@ -136,24 +136,25 @@ export function QueuePage() {
     }
   }, [addFilesToQueue]);
 
-  // ── Folder picker via Tauri dialog plugin ──
+  // ── Folder picker: select folder → scan for images recursively ──
   const handleBrowseFolder = useCallback(async () => {
     try {
-      const result = await open({
-        multiple: true,
-        directory: false,
-        filters: [{
-          name: 'Images',
-          extensions: SUPPORTED_EXTENSIONS,
-        }],
+      const folder = await open({
+        multiple: false,
+        directory: true,
       });
-      if (!result) return;
-      const paths = Array.isArray(result) ? result : [result];
-      addFilesToQueue(paths);
+      if (!folder) return;
+      const dirPath = Array.isArray(folder) ? folder[0] : folder;
+      const files = await invoke<string[]>("list_dir_images", { path: dirPath });
+      if (!files?.length) {
+        addToast(t("no_images_found") || "No images found in folder", "warning");
+        return;
+      }
+      addFilesToQueue(files);
     } catch (e) {
       console.error("Folder pick failed:", e);
     }
-  }, [addFilesToQueue]);
+  }, [addFilesToQueue, addToast, t]);
 
   const handleStart = useCallback(async () => {
     if (useStore.getState().processingState === "processing") return;

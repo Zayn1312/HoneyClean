@@ -135,6 +135,43 @@ fn send_to_worker(message: String, state: State<'_, WorkerGuard>) -> Result<(), 
     }
 }
 
+const IMAGE_EXTENSIONS: &[&str] = &[
+    "png", "jpg", "jpeg", "webp", "bmp", "tiff", "zip",
+];
+const VIDEO_EXTENSIONS: &[&str] = &["mp4", "mov", "avi", "mkv", "webm", "flv", "m4v"];
+
+#[tauri::command]
+fn list_dir_images(path: String) -> Result<Vec<String>, String> {
+    let dir = std::path::Path::new(&path);
+    if !dir.is_dir() {
+        return Err(format!("Not a directory: {}", path));
+    }
+    let mut files = Vec::new();
+    collect_files(dir, &mut files);
+    files.sort();
+    Ok(files)
+}
+
+fn collect_files(dir: &std::path::Path, out: &mut Vec<String>) {
+    let entries = match std::fs::read_dir(dir) {
+        Ok(e) => e,
+        Err(_) => return,
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_files(&path, out);
+        } else if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+            let ext_lower = ext.to_lowercase();
+            if IMAGE_EXTENSIONS.contains(&ext_lower.as_str())
+                || VIDEO_EXTENSIONS.contains(&ext_lower.as_str())
+            {
+                out.push(path.to_string_lossy().to_string());
+            }
+        }
+    }
+}
+
 #[tauri::command]
 fn get_gpu_info() -> Result<Value, String> {
     let output = Command::new("nvidia-smi")
@@ -177,6 +214,7 @@ pub fn run() {
             spawn_worker,
             send_to_worker,
             get_gpu_info,
+            list_dir_images,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
