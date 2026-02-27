@@ -11,6 +11,7 @@ export interface QueueItem {
   size: number;
   type: "image" | "video";
   thumbnail?: string;
+  outputPath?: string;
   status: "pending" | "processing" | "done" | "error" | "skipped" | "paused";
   elapsed?: number;
   selected: boolean;

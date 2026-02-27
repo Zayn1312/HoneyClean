@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { listen } from "@tauri-apps/api/event";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Upload, FolderPlus, Trash2, Play, Pause, Square, Image, Film } from "lucide-react";
 import { v4 as uuid } from "uuid";
@@ -46,15 +47,20 @@ function isSupportedFile(path: string): boolean {
 }
 
 function pathsToQueueItems(paths: string[]): QueueItem[] {
-  return paths.filter(isSupportedFile).map((path) => ({
-    id: uuid(),
-    path,
-    name: path.split(/[\\/]/).pop() || path,
-    size: 0,
-    type: isVideoFile(path) ? "video" as const : "image" as const,
-    status: "pending" as const,
-    selected: false,
-  }));
+  return paths.filter(isSupportedFile).map((path) => {
+    const ext = path.slice(path.lastIndexOf('.')).toLowerCase();
+    const isImage = !isVideoFile(path) && ext !== '.zip';
+    return {
+      id: uuid(),
+      path,
+      name: path.split(/[\\/]/).pop() || path,
+      size: 0,
+      type: isVideoFile(path) ? "video" as const : "image" as const,
+      status: "pending" as const,
+      selected: false,
+      thumbnail: isImage ? convertFileSrc(path) : undefined,
+    };
+  });
 }
 
 export function QueuePage() {
@@ -150,12 +156,15 @@ export function QueuePage() {
   }, [addFilesToQueue]);
 
   const handleStart = useCallback(async () => {
-    if (processingState === "processing") return;
+    if (useStore.getState().processingState === "processing") return;
     setProcessingState("processing");
     const startTime = Date.now();
 
-    for (let i = 0; i < queue.length; i++) {
-      const item = queue[i];
+    // Snapshot the queue at start — read from store, not stale closure
+    const items = useStore.getState().queue;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
       if (useStore.getState().processingState === "stopped") break;
 
       // Wait while paused
@@ -166,21 +175,24 @@ export function QueuePage() {
 
       updateQueueItem(item.id, { status: "processing" });
       setCurrentFile(item.name);
-      setProgress(i / queue.length);
+      setProgress(i / items.length);
 
       try {
         const action = item.type === "video" ? "process_video" : "process_image";
         const res = await send(action, {
           path: item.path,
-          skip_existing: skipProcessed,
+          skip_existing: useStore.getState().skipProcessed,
         });
 
         if (res.status === "ok") {
           const elapsed = res.data?.elapsed as number | undefined;
           const skipped = res.data?.skipped as boolean | undefined;
+          const outputPath = res.data?.output as string | undefined;
           updateQueueItem(item.id, {
             status: skipped ? "skipped" : "done",
             elapsed: elapsed ?? 0,
+            outputPath: outputPath ?? undefined,
+            thumbnail: outputPath ? convertFileSrc(outputPath) : item.thumbnail,
           });
         } else {
           updateQueueItem(item.id, { status: "error" });
@@ -192,7 +204,7 @@ export function QueuePage() {
       // Update speed/ETA
       const elapsed = (Date.now() - startTime) / 1000;
       const done = i + 1;
-      const remaining = queue.length - done;
+      const remaining = items.length - done;
       const avgPer = elapsed / done;
       setSpeed(done / (elapsed / 60));
       const etaSec = remaining * avgPer;
@@ -204,13 +216,12 @@ export function QueuePage() {
     setCurrentFile("");
     setEta("");
 
-    const done = useStore.getState().queue.filter((i) => i.status === "done").length;
-    const failed = useStore.getState().queue.filter((i) => i.status === "error").length;
-    if (done > 0 || failed > 0) {
-      addToast(t("status_done", { count: done }), done > 0 ? "success" : "warning");
+    const doneCount = useStore.getState().queue.filter((i) => i.status === "done").length;
+    const failedCount = useStore.getState().queue.filter((i) => i.status === "error").length;
+    if (doneCount > 0 || failedCount > 0) {
+      addToast(t("status_done", { count: doneCount }), doneCount > 0 ? "success" : "warning");
     }
-  }, [queue, processingState, send, skipProcessed, updateQueueItem, setProcessingState,
-      setProgress, setCurrentFile, setSpeed, setEta, addToast, t]);
+  }, [send, updateQueueItem, setProcessingState, setProgress, setCurrentFile, setSpeed, setEta, addToast, t]);
 
   const handlePause = useCallback(() => {
     setProcessingState(processingState === "paused" ? "processing" : "paused");
@@ -334,9 +345,21 @@ export function QueuePage() {
                       }`}
                     style={{ width: 140, height: 160 }}
                   >
-                    {/* Thumbnail placeholder */}
-                    <div className="w-full h-[110px] bg-void-700 flex items-center justify-center">
-                      {item.type === "video" ? (
+                    {/* Thumbnail */}
+                    <div className="w-full h-[110px] flex items-center justify-center"
+                      style={item.thumbnail ? {
+                        backgroundImage: 'repeating-conic-gradient(#1a1a2e 0% 25%, #252540 0% 50%)',
+                        backgroundSize: '16px 16px',
+                      } : undefined}
+                    >
+                      {item.thumbnail ? (
+                        <img
+                          src={item.thumbnail}
+                          alt={item.name}
+                          className="w-full h-full object-contain"
+                          loading="lazy"
+                        />
+                      ) : item.type === "video" ? (
                         <Film size={28} className="text-void-500" />
                       ) : (
                         <Image size={28} className="text-void-500" />
