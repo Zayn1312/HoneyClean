@@ -1,5 +1,5 @@
-import { useEffect, useCallback } from "react";
-import { Save, FolderOpen } from "lucide-react";
+import { useEffect, useCallback, useState, type ReactNode } from "react";
+import { Save, FolderOpen, Copy, Check, AlertTriangle } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { useStore } from "../store/useStore";
 import { useI18n } from "../hooks/useI18n";
@@ -8,8 +8,140 @@ import { Button } from "../components/ui/Button";
 import { Slider } from "../components/ui/Slider";
 import { Toggle } from "../components/ui/Toggle";
 import { Select } from "../components/ui/Select";
+import { Tooltip } from "../components/ui/Tooltip";
 import { MODEL_ORDER, MODEL_INFO } from "../lib/presets";
 import { LANGUAGES } from "../lib/i18n";
+
+// ── SettingsCard ──
+function SettingsCard({ icon, title, subtitle, children }: {
+  icon: string;
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="settings-card">
+      <div className="settings-card-header">
+        <span className="settings-card-icon">{icon}</span>
+        <span className="settings-card-title">{title}</span>
+        {subtitle && <span className="settings-card-subtitle">{subtitle}</span>}
+      </div>
+      <div className="settings-card-body">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ── SettingRow ──
+function SettingRow({ label, tooltip, tooltipDetail, children }: {
+  label: string;
+  tooltip?: string;
+  tooltipDetail?: string;
+  children: ReactNode;
+}) {
+  const inner = (
+    <div className="setting-row">
+      <span className="setting-label">{label}</span>
+      <div>{children}</div>
+    </div>
+  );
+
+  if (tooltip) {
+    return (
+      <Tooltip content={tooltip} detail={tooltipDetail} position="right">
+        {inner}
+      </Tooltip>
+    );
+  }
+
+  return inner;
+}
+
+// ── GPU Status Card ──
+function GpuStatusCard({ provider, isGpu, gpuEnabled }: {
+  provider: string;
+  isGpu: boolean;
+  gpuEnabled: boolean;
+}) {
+  const [copied, setCopied] = useState(false);
+  const pipCmd = "pip install onnxruntime-gpu";
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(pipCmd);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, []);
+
+  // GPU is active and working
+  if (isGpu) {
+    return (
+      <div className="mx-4 mb-3 p-3 rounded-lg border"
+        style={{ background: "rgba(34,197,94,0.06)", borderColor: "rgba(34,197,94,0.2)" }}>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-green-400" />
+          <span className="text-sm font-medium text-green-400">GPU aktiv</span>
+          <span className="text-xs text-green-500/70 ml-auto font-mono">{provider}</span>
+        </div>
+        <p className="text-xs text-green-500/60 mt-1">
+          Verarbeitung läuft auf der Grafikkarte — maximale Geschwindigkeit.
+        </p>
+      </div>
+    );
+  }
+
+  // GPU toggle is ON but provider is CPU — show fix instructions
+  if (gpuEnabled && !isGpu) {
+    return (
+      <div className="mx-4 mb-3 p-3 rounded-lg border"
+        style={{ background: "rgba(245,158,11,0.06)", borderColor: "rgba(245,158,11,0.25)" }}>
+        <div className="flex items-center gap-2 mb-2">
+          <AlertTriangle size={14} className="text-amber-400" />
+          <span className="text-sm font-medium text-amber-400">GPU aktiviert, aber CPU wird verwendet</span>
+        </div>
+        <p className="text-xs text-honey-500 mb-2">
+          ONNX Runtime hat keinen GPU-Provider gefunden. Das passiert wenn <code className="text-honey-300 bg-void-700 px-1 rounded">onnxruntime-gpu</code> nicht installiert ist.
+        </p>
+        <p className="text-xs text-honey-600 mb-2">
+          Öffne ein Terminal und führe diesen Befehl aus:
+        </p>
+        <div className="flex items-center gap-2">
+          <code className="flex-1 text-xs font-mono text-honey-300 bg-void-900 border border-void-600 rounded-md px-3 py-2">
+            {pipCmd}
+          </code>
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors"
+            style={{
+              background: copied ? "rgba(34,197,94,0.15)" : "rgba(245,158,11,0.12)",
+              color: copied ? "#22c55e" : "#F59E0B",
+              border: `1px solid ${copied ? "rgba(34,197,94,0.3)" : "rgba(245,158,11,0.3)"}`,
+            }}
+          >
+            {copied ? <><Check size={12} /> Kopiert</> : <><Copy size={12} /> Kopieren</>}
+          </button>
+        </div>
+        <p className="text-[11px] text-honey-700 mt-2">
+          Nach der Installation HoneyClean neu starten. Benötigt NVIDIA GPU + CUDA Treiber.
+        </p>
+      </div>
+    );
+  }
+
+  // GPU toggle is OFF
+  return (
+    <div className="mx-4 mb-3 p-3 rounded-lg border"
+      style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+      <div className="flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-honey-700" />
+        <span className="text-sm text-honey-600">GPU deaktiviert</span>
+      </div>
+      <p className="text-xs text-honey-700 mt-1">
+        Verarbeitung läuft auf der CPU. Aktiviere GPU für ~10x schnellere Verarbeitung.
+      </p>
+    </div>
+  );
+}
 
 export function SettingsPage() {
   const { t, language, setLanguage } = useI18n();
@@ -19,6 +151,8 @@ export function SettingsPage() {
   const updateConfig = useStore((s) => s.updateConfig);
   const workerReady = useStore((s) => s.workerReady);
   const addToast = useStore((s) => s.addToast);
+  const provider = useStore((s) => s.provider);
+  const isGpu = useStore((s) => s.isGpu);
 
   useEffect(() => {
     if (!workerReady) return;
@@ -68,10 +202,11 @@ export function SettingsPage() {
   ];
 
   return (
-    <div className="h-full overflow-y-auto p-4">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-heading font-bold text-honey-300">
+    <div className="h-full overflow-y-auto" style={{ padding: 20 }}>
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-heading font-semibold text-honey-300" style={{ fontSize: 22 }}>
             {t("settings_title")}
           </h2>
           <Button variant="primary" size="sm" icon={<Save size={14} />} onClick={handleSave}>
@@ -79,32 +214,26 @@ export function SettingsPage() {
           </Button>
         </div>
 
-        {/* General */}
-        <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-honey-400 uppercase tracking-wider">
-            {t("section_general")}
-          </h3>
-          <div className="space-y-3 bg-void-800/40 rounded-xl p-4 border border-void-600/40">
-            {/* Output directory */}
+        {/* 1. General */}
+        <SettingsCard icon="📁" title={t("section_general")}>
+          <SettingRow label={t("output_dir")} tooltip="Zielordner für verarbeitete Bilder." tooltipDetail="Alle Ergebnisse werden hier gespeichert.">
             <div className="flex items-end gap-2">
-              <div className="flex-1">
-                <label className="text-xs text-honey-300 block mb-1">{t("output_dir")}</label>
-                <input
-                  type="text"
-                  value={(config.output_dir as string) ?? ""}
-                  onChange={(e) => updateConfig({ output_dir: e.target.value })}
-                  className="w-full bg-void-700 border border-void-500 text-honey-100
-                    rounded-lg px-3 py-2 text-sm focus:border-honey-500 focus:outline-none"
-                />
-              </div>
-              <Button size="md" variant="ghost" icon={<FolderOpen size={14} />}
+              <input
+                type="text"
+                value={(config.output_dir as string) ?? ""}
+                onChange={(e) => updateConfig({ output_dir: e.target.value })}
+                className="flex-1 bg-void-700 border border-void-500 text-honey-100
+                  rounded-lg px-3 py-2 text-sm focus:border-honey-500 focus:outline-none"
+              />
+              <Button size="sm" variant="ghost" icon={<FolderOpen size={14} />}
                 onClick={handleBrowseOutput}>
                 {t("browse")}
               </Button>
             </div>
+          </SettingRow>
 
+          <SettingRow label={t("language")} tooltip="Sprache der Benutzeroberfläche.">
             <Select
-              label={t("language")}
               value={language}
               options={LANGUAGES}
               onChange={(v) => {
@@ -112,131 +241,144 @@ export function SettingsPage() {
                 updateConfig({ language: v });
               }}
             />
+          </SettingRow>
 
+          <SettingRow label={t("output_format")} tooltip="Ausgabeformat der Bilder." tooltipDetail="PNG = verlustfrei mit Transparenz. JPEG = kleiner, kein Alpha. WebP = komprimiert mit Alpha.">
             <Select
-              label={t("output_format")}
               value={(config.output_format as string) ?? "png"}
               options={formatOptions}
               onChange={(v) => updateConfig({ output_format: v })}
             />
-          </div>
-        </section>
+          </SettingRow>
+        </SettingsCard>
 
-        {/* AI Engine */}
-        <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-honey-400 uppercase tracking-wider">
-            {t("section_ai")}
-          </h3>
-          <div className="space-y-3 bg-void-800/40 rounded-xl p-4 border border-void-600/40">
+        {/* 2. AI Engine */}
+        <SettingsCard icon="🤖" title={t("section_ai")}>
+          <SettingRow label={t("ai_model")} tooltip="KI-Modell für die Hintergrundentfernung." tooltipDetail="BiRefNet General = beste Qualität. Silueta = schnellstes.">
             <Select
-              label={t("ai_model")}
               value={(config.model as string) ?? "auto"}
               options={modelOptions}
               onChange={(v) => updateConfig({ model: v })}
             />
+          </SettingRow>
 
+          <SettingRow label={t("color_decontaminate")} tooltip="Farbentfernung an semi-transparenten Kanten." tooltipDetail="Entfernt Hintergrundfarbe die in die Ränder blutet.">
             <Toggle
-              label={t("color_decontaminate")}
+              label=""
               checked={(config.color_decontaminate as boolean) ?? true}
               onChange={(v) => updateConfig({ color_decontaminate: v })}
             />
+          </SettingRow>
 
+          <SettingRow label={t("edge_feather")} tooltip="Weiche Kanten." tooltipDetail="0 = scharf. 5-10 = natürlichere Übergänge.">
             <Slider
-              label={t("edge_feather")}
+              label=""
               value={(config.edge_feather as number) ?? 0}
               min={0} max={20}
               onChange={(v) => updateConfig({ edge_feather: v })}
               suffix="px"
             />
+          </SettingRow>
 
+          <SettingRow label={t("alpha_fg_label")} tooltip="Vordergrundstärke." tooltipDetail="Höhere Werte = härtere Kanten beim Ausschneiden.">
             <Slider
-              label={t("alpha_fg_label")}
+              label=""
               value={(config.alpha_fg as number) ?? 270}
               min={0} max={300}
               onChange={(v) => updateConfig({ alpha_fg: v })}
             />
+          </SettingRow>
 
+          <SettingRow label={t("alpha_bg_label")} tooltip="Hintergrundtoleranz." tooltipDetail="Höhere Werte = mehr Hintergrund wird entfernt.">
             <Slider
-              label={t("alpha_bg_label")}
+              label=""
               value={(config.alpha_bg as number) ?? 20}
               min={0} max={100}
               onChange={(v) => updateConfig({ alpha_bg: v })}
             />
+          </SettingRow>
 
+          <SettingRow label={t("alpha_erode_label")} tooltip="Kantenreduzierung." tooltipDetail="Verhindert Hintergrundfarbe an den Rändern.">
             <Slider
-              label={t("alpha_erode_label")}
+              label=""
               value={(config.alpha_erode as number) ?? 15}
               min={0} max={50}
               onChange={(v) => updateConfig({ alpha_erode: v })}
             />
-          </div>
-        </section>
+          </SettingRow>
+        </SettingsCard>
 
-        {/* GPU */}
-        <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-honey-400 uppercase tracking-wider">
-            {t("section_gpu")}
-          </h3>
-          <div className="space-y-3 bg-void-800/40 rounded-xl p-4 border border-void-600/40">
+        {/* 3. GPU */}
+        <SettingsCard icon="⚡" title={t("section_gpu")} subtitle={`${provider} ${isGpu ? "✓" : "⚠"}`}>
+          <SettingRow label={t("use_gpu_label")} tooltip="GPU-Beschleunigung aktivieren." tooltipDetail="Deaktivieren nur wenn GPU Probleme verursacht.">
             <Toggle
-              label={t("use_gpu_label")}
+              label=""
               checked={(config.use_gpu as boolean) ?? true}
               onChange={(v) => updateConfig({ use_gpu: v })}
             />
+          </SettingRow>
 
+          {/* GPU status explanation */}
+          <GpuStatusCard provider={provider} isGpu={isGpu} gpuEnabled={(config.use_gpu as boolean) ?? true} />
+
+          <SettingRow label={t("gpu_limit_label")} tooltip="Begrenzt die GPU-Auslastung." tooltipDetail="100% = maximale Geschwindigkeit.">
             <Slider
-              label={t("gpu_limit_label")}
+              label=""
               value={(config.gpu_limit as number) ?? 100}
               min={10} max={100}
               onChange={(v) => updateConfig({ gpu_limit: v })}
               suffix="%"
             />
-          </div>
-        </section>
+          </SettingRow>
+        </SettingsCard>
 
-        {/* Video */}
-        <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-honey-400 uppercase tracking-wider">
-            {t("section_video")}
-          </h3>
-          <div className="space-y-3 bg-void-800/40 rounded-xl p-4 border border-void-600/40">
+        {/* 4. Video */}
+        <SettingsCard icon="🎬" title={t("section_video")}>
+          <SettingRow label={t("video_format")} tooltip="Ausgabeformat für Videos." tooltipDetail="WebM = klein mit Alpha. MOV = ProRes für Profis.">
             <Select
-              label={t("video_format")}
               value={(config.video_format as string) ?? "webm"}
               options={videoFormatOptions}
               onChange={(v) => updateConfig({ video_format: v })}
             />
+          </SettingRow>
 
+          <SettingRow label={t("temporal_smooth")} tooltip="Zeitglättung zwischen Frames." tooltipDetail="Verhindert Flackern in Videos. Höher = glatter.">
             <Slider
-              label={t("temporal_smooth")}
+              label=""
               value={(config.temporal_smoothing as number) ?? 40}
               min={0} max={100}
               onChange={(v) => updateConfig({ temporal_smoothing: v })}
               suffix="%"
             />
+          </SettingRow>
 
+          <SettingRow label={t("edge_refine")} tooltip="Kantenverfeinerung für Videoframes." tooltipDetail="Höher = präzisere Kanten, aber langsamer.">
             <Slider
-              label={t("edge_refine")}
+              label=""
               value={(config.edge_refinement as number) ?? 2}
               min={0} max={10}
               onChange={(v) => updateConfig({ edge_refinement: v })}
             />
+          </SettingRow>
 
+          <SettingRow label={t("max_vram")} tooltip="Maximaler VRAM für Videoframes." tooltipDetail="Reduzieren wenn andere Programme VRAM brauchen.">
             <Slider
-              label={t("max_vram")}
+              label=""
               value={(config.max_vram_pct as number) ?? 75}
               min={25} max={100}
               onChange={(v) => updateConfig({ max_vram_pct: v })}
               suffix="%"
             />
+          </SettingRow>
 
+          <SettingRow label={t("preserve_audio")} tooltip="Audio aus dem Originalvideo beibehalten.">
             <Toggle
-              label={t("preserve_audio")}
+              label=""
               checked={(config.preserve_audio as boolean) ?? true}
               onChange={(v) => updateConfig({ preserve_audio: v })}
             />
-          </div>
-        </section>
+          </SettingRow>
+        </SettingsCard>
       </div>
     </div>
   );

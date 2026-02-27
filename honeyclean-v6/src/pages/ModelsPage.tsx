@@ -5,6 +5,7 @@ import { useStore } from "../store/useStore";
 import { useI18n } from "../hooks/useI18n";
 import { useWorker } from "../hooks/useWorker";
 import { Button } from "../components/ui/Button";
+import { Tooltip } from "../components/ui/Tooltip";
 import { MODEL_INFO } from "../lib/presets";
 
 interface ModelData {
@@ -104,9 +105,9 @@ export function ModelsPage() {
   }, [models, handleDownload]);
 
   return (
-    <div className="h-full flex flex-col p-4 gap-4 overflow-y-auto">
+    <div className="h-full flex flex-col gap-4 overflow-y-auto" style={{ padding: 20 }}>
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-heading font-bold text-honey-300">
+        <h2 className="font-heading font-semibold text-honey-300" style={{ fontSize: 22 }}>
           {t("model_page_title")}
         </h2>
         <div className="flex gap-2">
@@ -122,7 +123,7 @@ export function ModelsPage() {
 
       {/* Update banner */}
       {updateInfo?.available && (
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-honey-500/10 border border-honey-500/30">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-honey-500/10 border border-honey-500/30">
           <RefreshCw size={16} className="text-honey-400" />
           <span className="text-sm text-honey-300">
             {t("model_update_available", { latest: updateInfo.latest })}
@@ -134,7 +135,7 @@ export function ModelsPage() {
       )}
 
       {/* Model cards grid */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3" style={{ gap: 12 }}>
         {models.map((model) => {
           const info = MODEL_INFO[model.id];
           const isDownloading = downloading.has(model.id);
@@ -143,57 +144,58 @@ export function ModelsPage() {
             <motion.div
               key={model.id}
               whileHover={{ borderColor: "rgba(217, 163, 60, 0.3)" }}
-              className="rounded-lg border border-void-600 bg-void-800/50 p-3 flex flex-col gap-2"
+              className="border border-void-600/40 bg-void-800/40 flex flex-col"
+              style={{ borderRadius: 12, padding: 16 }}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-medium text-honey-200 truncate">
-                    {info ? t(info.name_key) : model.id}
-                  </h3>
-                  <p className="text-[11px] text-honey-600 mt-0.5 line-clamp-2">
-                    {info ? t(info.desc_key) : ""}
-                  </p>
-                </div>
+              <div className="flex-1 min-w-0 mb-3">
+                <h3 className="font-bold text-honey-200 truncate" style={{ fontSize: 15 }}>
+                  {info ? t(info.name_key) : model.id}
+                </h3>
+                <p className="text-honey-600 mt-1 line-clamp-2" style={{ fontSize: 13 }}>
+                  {info ? t(info.desc_key) : ""}
+                </p>
               </div>
 
-              <div className="flex items-center justify-between mt-auto">
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium
-                    ${model.cached
-                      ? "bg-green-500/15 text-green-400"
-                      : "bg-void-700 text-honey-700"
-                    }`}>
-                    {model.cached ? t("model_cached") : t("model_not_cached")}
-                  </span>
-                  <span className="text-[10px] text-honey-700">
-                    {model.size_formatted}
-                  </span>
-                </div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className={`text-[11px] px-2 py-0.5 rounded-md font-medium
+                  ${model.cached
+                    ? "bg-honey-500/15 text-honey-400"
+                    : "bg-void-700 text-honey-700"
+                  }`}>
+                  {model.cached ? t("model_cached") : t("model_not_cached")}
+                </span>
+                <span className="text-[11px] text-honey-700 font-mono">
+                  {model.size_formatted}
+                </span>
+              </div>
 
-                <div className="flex gap-1">
-                  {!model.cached ? (
+              <div className="mt-auto">
+                {!model.cached ? (
+                  <Tooltip content={info ? t(info.name_key) : model.id} detail={`${model.size_formatted} — Klicken zum Herunterladen.`} position="bottom">
                     <button
                       onClick={() => handleDownload(model.id)}
                       disabled={isDownloading}
-                      className="p-1.5 rounded-md hover:bg-honey-500/15 text-honey-500
-                        disabled:opacity-40 transition-colors"
+                      className="w-full flex items-center justify-center gap-2 py-2 rounded-lg
+                        bg-honey-500/10 hover:bg-honey-500/20 text-honey-400
+                        disabled:opacity-40 transition-colors text-[13px] font-medium"
                     >
                       {isDownloading ? (
-                        <RefreshCw size={14} className="animate-spin" />
+                        <><RefreshCw size={14} className="animate-spin" /> Downloading...</>
                       ) : (
-                        <Download size={14} />
+                        <><Download size={14} /> Download</>
                       )}
                     </button>
-                  ) : (
-                    <button
-                      onClick={() => handleDelete(model.id)}
-                      className="p-1.5 rounded-md hover:bg-red-500/15 text-red-400
-                        transition-colors"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
+                  </Tooltip>
+                ) : (
+                  <button
+                    onClick={() => handleDelete(model.id)}
+                    className="w-full flex items-center justify-center gap-2 py-2 rounded-lg
+                      bg-void-700/50 hover:bg-red-500/10 text-honey-700 hover:text-red-400
+                      transition-colors text-[13px]"
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
+                )}
               </div>
             </motion.div>
           );

@@ -40,6 +40,11 @@ logger = logging.getLogger("honeyclean_worker")
 # ---------------------------------------------------------------------------
 VERSION = "6.0"
 IS_WINDOWS = sys.platform == "win32"
+
+# Force CUDA to use GPU 0
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["ORT_TENSORRT_ENGINE_CACHE_ENABLE"] = "1"
+
 SUBPROCESS_FLAGS = {}
 if IS_WINDOWS:
     SUBPROCESS_FLAGS["creationflags"] = subprocess.CREATE_NO_WINDOW
@@ -143,6 +148,7 @@ ERROR_REGISTRY = {
     "HC-040": "UI init failed: {error}", "HC-041": "DnD unavailable: {error}",
     "HC-042": "Shadow generation failed", "HC-043": "Export preset failed",
     "HC-044": "Edge feather failed", "HC-045": "Color decontamination failed",
+    "HC-GPU-001": "No GPU provider available",
 }
 
 # ---------------------------------------------------------------------------
@@ -150,6 +156,7 @@ ERROR_REGISTRY = {
 # ---------------------------------------------------------------------------
 _session = None
 _session_model = None
+_active_provider = "CPUExecutionProvider"
 _cfg = None
 _model_cache_dir = None
 
@@ -291,7 +298,9 @@ def decontaminate_edges(img, strength=0.5):
         rgb[semi] = rgb[semi] * (1 - blend[:, np.newaxis]) + avg * blend[:, np.newaxis]
         out = np.concatenate([np.clip(rgb, 0, 255), arr[:, :, 3:4]], axis=2).astype(np.uint8)
         from PIL import Image
-        return Image.fromarray(out)
+        result = Image.fromarray(out)
+        del arr, rgb, alpha, out
+        return result
     except Exception:
         return img
 
@@ -364,46 +373,62 @@ def replace_background(fg_img, bg_type, bg_value=None):
 
 
 # ---------------------------------------------------------------------------
-# Session Management
+# Session Management — GPU PRIORITY
 # ---------------------------------------------------------------------------
-def init_session(model_name, use_gpu=True):
-    global _session, _session_model
-    if _session and _session_model == model_name:
-        return True, _session_model, []
+def create_session(model_name):
+    """Create or reuse a rembg session. Priority: CUDA > DML > CPU."""
+    global _session, _session_model, _active_provider
 
-    try:
-        import onnxruntime as ort
-        from rembg import new_session
+    if _session is not None and _session_model == model_name:
+        return _session
 
-        avail = ort.get_available_providers()
-        providers = []
-        if use_gpu:
-            if "CUDAExecutionProvider" in avail:
-                providers.append("CUDAExecutionProvider")
-            if "DmlExecutionProvider" in avail:
-                providers.append("DmlExecutionProvider")
-            providers.append("CPUExecutionProvider")
-        else:
-            providers = ["CPUExecutionProvider"]
+    import onnxruntime as ort
+    from rembg import new_session
 
-        if model_name == "auto":
-            for m in MODEL_PRIORITY:
-                try:
-                    _session = new_session(m, providers=providers)
-                    _session_model = m
-                    active = _get_active_providers()
-                    return True, m, active
-                except Exception:
-                    continue
-            return False, None, []
-        else:
-            _session = new_session(model_name, providers=providers)
+    available = ort.get_available_providers()
+    logger.info("Available providers: %s", available)
+
+    # Priority order — CUDA wins if available
+    priority = ["CUDAExecutionProvider", "DmlExecutionProvider", "CPUExecutionProvider"]
+
+    for provider in priority:
+        if provider not in available:
+            continue
+        try:
+            sess_options = ort.SessionOptions()
+            sess_options.enable_mem_pattern = False
+            sess_options.enable_cpu_mem_arena = False
+            sess_options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+
+            # Build provider list — always include CPU as fallback for unsupported ops
+            providers = [provider]
+            if provider != "CPUExecutionProvider":
+                providers.append("CPUExecutionProvider")
+
+            session = new_session(
+                model_name,
+                providers=providers,
+                sess_options=sess_options,
+            )
+
+            # Verify which provider is actually active
+            actual = []
+            inner = getattr(session, 'inner_session', None) or getattr(session, 'session', None)
+            if inner:
+                actual = list(inner.get_providers())
+
+            _active_provider = actual[0] if actual else provider
+            _session = session
             _session_model = model_name
-            active = _get_active_providers()
-            return True, model_name, active
-    except Exception as e:
-        logger.error("init_session failed: %s", e)
-        return False, None, []
+
+            logger.info("SUCCESS — Provider: %s (requested: %s)", _active_provider, provider)
+            return session
+
+        except Exception as e:
+            logger.warning("Provider %s failed: %s", provider, e)
+            continue
+
+    raise RuntimeError("HC-GPU-001: No provider available")
 
 
 def _get_active_providers():
@@ -413,27 +438,53 @@ def _get_active_providers():
             return list(inner.get_providers())
     except Exception:
         pass
-    return ["unknown"]
+    return [_active_provider]
+
+
+def _provider_label():
+    """Return a human-readable label for the current provider."""
+    if "CUDA" in _active_provider:
+        return "CUDA"
+    if "Dml" in _active_provider or "DirectML" in _active_provider:
+        return "DirectML"
+    return "CPU"
+
+
+def _is_gpu_provider():
+    return _active_provider in ("CUDAExecutionProvider", "DmlExecutionProvider")
 
 
 # ---------------------------------------------------------------------------
-# Image Processing
+# Image Processing — GPU ONLY, ONE IMAGE AT A TIME
 # ---------------------------------------------------------------------------
 def process_single_image(file_path, cfg):
+    """Process single image. Load → GPU → Save → FREE MEMORY."""
     from PIL import Image
     from rembg import remove
 
-    global _session
-    if _session is None:
-        ok, model, providers = init_session(
-            cfg.get("model", "auto"), cfg.get("use_gpu", True)
-        )
-        if not ok:
-            return None, "HC-020"
+    img = None
+    result = None
 
-    img_path = Path(file_path)
     try:
-        img = Image.open(img_path).convert("RGB")
+        # Create/reuse session
+        model_name = cfg.get("model", "auto")
+        if model_name == "auto":
+            # Pick best available model
+            for m in MODEL_PRIORITY:
+                if is_model_cached(m):
+                    model_name = m
+                    break
+            else:
+                model_name = "birefnet-general"
+
+        create_session(model_name)
+
+        # Load image — smallest possible footprint
+        img = Image.open(file_path)
+        if img.mode not in ("RGB", "RGBA"):
+            img = img.convert("RGBA")
+
+        # Process on GPU
         try:
             result = remove(
                 img, session=_session,
@@ -443,22 +494,48 @@ def process_single_image(file_path, cfg):
         except (TypeError, ValueError):
             result = remove(img, session=_session)
 
-        if result.mode != "RGBA":
-            result = result.convert("RGBA")
-
+        # IMMEDIATELY free source image
+        img.close()
         del img
-        gc.collect()
+        img = None
 
+        if result.mode != "RGBA":
+            old = result
+            result = result.convert("RGBA")
+            old.close()
+            del old
+
+        # Apply post-processing in-place (no extra copies)
         if cfg.get("color_decontaminate", True):
-            result = decontaminate_edges(result)
+            old = result
+            result = decontaminate_edges(result, cfg.get("decontaminate_strength", 0.5))
+            if old is not result:
+                old.close()
+                del old
+
         feather = cfg.get("edge_feather", 0)
         if feather > 0:
+            old = result
             result = apply_edge_feather(result, feather)
+            if old is not result:
+                old.close()
+                del old
 
         return result, None
+
     except Exception as e:
+        logger.error("process_single_image failed: %s", e)
+        return None, "HC-021"
+
+    finally:
+        # MANDATORY — free every byte immediately
+        if img is not None:
+            try:
+                img.close()
+            except Exception:
+                pass
+            del img
         gc.collect()
-        return None, f"HC-021"
 
 
 def save_result(result_img, original_path, cfg):
@@ -483,6 +560,8 @@ def save_result(result_img, original_path, cfg):
             else:
                 bg.paste(img)
             bg.save(str(op), "JPEG", quality=95)
+            bg.close()
+            del bg
             return str(op)
         elif fmt == "webp":
             op = out_dir / f"{stem}_clean.webp"
@@ -672,7 +751,6 @@ def process_video_file(video_path, cfg, request_id, cancel_flag):
         "max_vram_pct": cfg.get("max_vram_pct", 75),
     }
 
-    # Import the video processor from the v5.0 location or bundled
     vp = _create_video_processor()
     if vp is None:
         return False, "VideoProcessor not available"
@@ -704,7 +782,6 @@ def process_video_file(video_path, cfg, request_id, cancel_flag):
 def _create_video_processor():
     """Create a VideoProcessor instance. Try local import first, then bundled."""
     try:
-        # Try importing from the v5.0 location
         v5_dir = Path(__file__).resolve().parent.parent.parent.parent
         vp_path = v5_dir / "video_processor.py"
         if vp_path.exists():
@@ -716,7 +793,6 @@ def _create_video_processor():
     except Exception as e:
         logger.warning("Could not load VideoProcessor from v5: %s", e)
 
-    # Try direct import (if video_processor is in path)
     try:
         from video_processor import VideoProcessor
         return VideoProcessor()
@@ -749,6 +825,147 @@ def get_gpu_info():
     except Exception:
         pass
     return info
+
+
+# ---------------------------------------------------------------------------
+# Crash Reporter
+# ---------------------------------------------------------------------------
+def capture_crash(error, context=None):
+    """Capture crash, save locally. Returns crash_id."""
+    import traceback
+    import platform
+    from datetime import datetime
+
+    crash_id = f"HC-CRASH-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+
+    report = {
+        "crash_id": crash_id,
+        "timestamp": datetime.now().isoformat(),
+        "version": VERSION,
+        "error_type": type(error).__name__,
+        "error_message": str(error),
+        "traceback": traceback.format_exc(),
+        "context": context or {},
+        "system": {
+            "platform": platform.platform(),
+            "python": sys.version,
+            "machine": platform.machine(),
+            "processor": platform.processor(),
+        },
+        "gpu_info": _get_gpu_info_safe(),
+        "memory_info": _get_memory_info_safe(),
+        "worker_state": {
+            "active_model": _session_model,
+            "active_provider": _active_provider,
+            "current_file": (context or {}).get("current_file", "unknown"),
+        }
+    }
+
+    # Save locally
+    crash_dir = Path(os.environ.get("APPDATA", ".")) / "HoneyClean" / "crashes"
+    crash_dir.mkdir(parents=True, exist_ok=True)
+    crash_path = crash_dir / f"{crash_id}.json"
+    try:
+        with open(crash_path, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2, ensure_ascii=False)
+    except Exception:
+        pass
+
+    # Send email (non-blocking, fire and forget)
+    threading.Thread(
+        target=_send_crash_email, args=(report, str(crash_path)), daemon=True
+    ).start()
+
+    logger.error("Crash captured: %s — %s", crash_id, str(error))
+    return crash_id
+
+
+def _send_crash_email(report, crash_path):
+    """Send crash report email. Silent fail — never crash the crash reporter."""
+    try:
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+
+        subject = f"[HoneyClean v{VERSION}] Crash: {report['error_type']} — {report['crash_id']}"
+
+        body = f"""
+HoneyClean Crash Report
+{'=' * 55}
+ID:        {report['crash_id']}
+Time:      {report['timestamp']}
+Version:   {report['version']}
+
+ERROR
+{'-' * 55}
+Type:      {report['error_type']}
+Message:   {report['error_message']}
+
+TRACEBACK
+{'-' * 55}
+{report['traceback']}
+
+CONTEXT
+{'-' * 55}
+Model:     {report['worker_state']['active_model']}
+Provider:  {report['worker_state']['active_provider']}
+File:      {report['worker_state']['current_file']}
+
+SYSTEM
+{'-' * 55}
+Platform:  {report['system']['platform']}
+Python:    {report['system']['python']}
+GPU:       {report.get('gpu_info', 'unknown')}
+Memory:    {report.get('memory_info', 'unknown')}
+
+Local file: {crash_path}
+{'=' * 55}
+        """.strip()
+
+        # Read credentials from %APPDATA%/HoneyClean/smtp_config.json
+        smtp_config_path = Path(
+            os.environ.get("APPDATA", ".")
+        ) / "HoneyClean" / "smtp_config.json"
+
+        if smtp_config_path.exists():
+            with open(smtp_config_path) as f:
+                smtp_cfg = json.load(f)
+
+            msg = MIMEMultipart()
+            msg["From"] = smtp_cfg.get("user", "")
+            msg["To"] = "zaynhonig@gmail.com"
+            msg["Subject"] = subject
+            msg.attach(MIMEText(body, "plain", "utf-8"))
+
+            with smtplib.SMTP(smtp_cfg.get("host", "smtp.gmail.com"), smtp_cfg.get("port", 587)) as server:
+                server.starttls()
+                server.login(smtp_cfg["user"], smtp_cfg["password"])
+                server.sendmail(smtp_cfg["user"], "zaynhonig@gmail.com", msg.as_string())
+
+    except Exception:
+        pass  # Never crash the crash reporter
+
+
+def _get_gpu_info_safe():
+    try:
+        result = subprocess.run(
+            ["nvidia-smi", "--query-gpu=name,memory.total,memory.used,utilization.gpu",
+             "--format=csv,noheader"],
+            capture_output=True, text=True, timeout=3,
+            **SUBPROCESS_FLAGS,
+        )
+        return result.stdout.strip()
+    except Exception:
+        return "unavailable"
+
+
+def _get_memory_info_safe():
+    try:
+        import psutil
+        m = psutil.virtual_memory()
+        return f"{m.used // 1024**2} MB used / {m.total // 1024**2} MB total ({m.percent}%)"
+    except Exception:
+        return "unavailable"
 
 
 # ---------------------------------------------------------------------------
@@ -800,23 +1017,28 @@ def handle_action(msg):
 
         elif action == "init_session":
             model = params.get("model", "auto")
-            use_gpu = params.get("use_gpu", True)
-            ok, actual_model, providers = init_session(model, use_gpu)
-            if ok:
-                primary = providers[0] if providers else "unknown"
-                is_gpu = any(p in ("CUDAExecutionProvider", "DmlExecutionProvider") for p in providers)
-                label = "CUDA" if "CUDAExecutionProvider" in providers else (
-                    "DirectML" if "DmlExecutionProvider" in providers else "CPU"
-                )
+            try:
+                # Resolve auto model
+                actual_model = model
+                if actual_model == "auto":
+                    for m in MODEL_PRIORITY:
+                        if is_model_cached(m):
+                            actual_model = m
+                            break
+                    else:
+                        actual_model = "birefnet-general"
+
+                create_session(actual_model)
+                providers = _get_active_providers()
                 send_response(request_id, "ok", {
                     "model": actual_model,
                     "providers": providers,
-                    "primary": primary,
-                    "is_gpu": is_gpu,
-                    "label": label,
+                    "primary": _active_provider,
+                    "is_gpu": _is_gpu_provider(),
+                    "label": _provider_label(),
                 })
-            else:
-                send_response(request_id, "error", error="HC-020")
+            except Exception as e:
+                send_response(request_id, "error", error=str(e))
 
         elif action == "process_image":
             file_path = params.get("path")
@@ -829,22 +1051,41 @@ def handle_action(msg):
                 return
 
             t0 = time.time()
-            result, error_code = process_single_image(file_path, cfg)
-            elapsed = round(time.time() - t0, 2)
+            result = None
+            try:
+                result, error_code = process_single_image(file_path, cfg)
+                elapsed = round(time.time() - t0, 2)
 
-            if result:
-                output_path = save_result(result, file_path, cfg)
-                del result
+                if result:
+                    output_path = save_result(result, file_path, cfg)
+                    # FREE result immediately after saving
+                    result.close()
+                    del result
+                    result = None
+                    gc.collect()
+
+                    send_response(request_id, "ok", {
+                        "path": file_path,
+                        "output": output_path,
+                        "elapsed": elapsed,
+                        "skipped": False,
+                        "provider": _provider_label(),
+                        "is_gpu": _is_gpu_provider(),
+                    })
+                else:
+                    gc.collect()
+                    send_response(request_id, "error", error=error_code)
+            except Exception as e:
+                if result is not None:
+                    try:
+                        result.close()
+                    except Exception:
+                        pass
+                    del result
                 gc.collect()
-                send_response(request_id, "ok", {
-                    "path": file_path,
-                    "output": output_path,
-                    "elapsed": elapsed,
-                    "skipped": False,
-                })
-            else:
-                gc.collect()
-                send_response(request_id, "error", error=error_code)
+                crash_id = capture_crash(e, context={"current_file": file_path})
+                send_response(request_id, "error",
+                              error=f"{crash_id}: {e}")
 
         elif action == "process_video":
             file_path = params.get("path")
@@ -855,12 +1096,16 @@ def handle_action(msg):
             _cancel_flags[request_id] = cancel_flag
 
             def _run_video():
-                ok, err = process_video_file(file_path, cfg, request_id, cancel_flag)
-                _cancel_flags.pop(request_id, None)
-                if ok:
-                    send_response(request_id, "ok", {"path": file_path})
-                else:
-                    send_response(request_id, "error", error=err or "Video processing failed")
+                try:
+                    ok, err = process_video_file(file_path, cfg, request_id, cancel_flag)
+                    _cancel_flags.pop(request_id, None)
+                    if ok:
+                        send_response(request_id, "ok", {"path": file_path})
+                    else:
+                        send_response(request_id, "error", error=err or "Video processing failed")
+                except Exception as e:
+                    crash_id = capture_crash(e, context={"current_file": file_path})
+                    send_response(request_id, "error", error=f"{crash_id}: {e}")
 
             threading.Thread(target=_run_video, daemon=True).start()
 
@@ -961,7 +1206,8 @@ def handle_action(msg):
 
     except Exception as e:
         logger.exception("Action %s failed", action)
-        send_response(request_id, "error", error=str(e))
+        crash_id = capture_crash(e, context={"action": action})
+        send_response(request_id, "error", error=f"{crash_id}: {e}")
 
 
 # ---------------------------------------------------------------------------
@@ -980,7 +1226,15 @@ def main():
         except json.JSONDecodeError as e:
             send_response("parse_error", "error", error=f"Invalid JSON: {e}")
             continue
-        handle_action(msg)
+
+        try:
+            handle_action(msg)
+        except Exception as e:
+            crash_id = capture_crash(e, context={"raw_line": line[:200]})
+            send_response(
+                msg.get("id", "unknown"), "error",
+                error=f"{crash_id}: {e}"
+            )
 
 
 if __name__ == "__main__":

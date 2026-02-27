@@ -22,22 +22,26 @@ impl Default for WorkerState {
 
 type WorkerGuard = Mutex<WorkerState>;
 
-fn find_python() -> String {
-    // Try common Python paths on Windows
-    for cmd in &["python", "python3", "py"] {
-        if let Ok(output) = Command::new(cmd)
-            .arg("--version")
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .creation_flags(0x08000000) // CREATE_NO_WINDOW
-            .output()
-        {
-            if output.status.success() {
-                return cmd.to_string();
-            }
-        }
+fn find_python_312() -> (String, Vec<String>) {
+    // Option 1: py launcher with -3.12 flag
+    if Command::new("py")
+        .args(["-3.12", "--version"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .creation_flags(0x08000000)
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+    {
+        return ("py".to_string(), vec!["-3.12".to_string()]);
     }
-    "python".to_string()
+    // Option 2: explicit path
+    let explicit = r"C:\Users\anoua\AppData\Local\Programs\Python\Python312\python.exe";
+    if std::path::Path::new(explicit).exists() {
+        return (explicit.to_string(), vec![]);
+    }
+    // Option 3: fallback (will be CPU mode)
+    ("python".to_string(), vec![])
 }
 
 fn find_worker_script(app: &AppHandle) -> String {
@@ -78,10 +82,14 @@ fn spawn_worker(app: AppHandle, state: State<'_, WorkerGuard>) -> Result<String,
         let _ = child.kill();
     }
 
-    let python = find_python();
+    let (python_bin, python_prefix) = find_python_312();
     let script = find_worker_script(&app);
 
-    let mut child = Command::new(&python)
+    let mut cmd = Command::new(&python_bin);
+    for arg in &python_prefix {
+        cmd.arg(arg);
+    }
+    let mut child = cmd
         .arg(&script)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -204,6 +212,84 @@ fn get_gpu_info() -> Result<Value, String> {
     }
 }
 
+#[tauri::command]
+fn copy_file(src: String, dst: String) -> Result<(), String> {
+    std::fs::copy(&src, &dst).map_err(|e| format!("Copy failed: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
+fn run_gpu_diagnostics(app: AppHandle) -> Result<Value, String> {
+    let (python_bin, python_prefix) = find_python_312();
+
+    // Find gpu_diagnostics.py using same logic as worker script
+    let locations = vec![
+        app.path()
+            .resource_dir()
+            .ok()
+            .map(|p| p.join("python/gpu_diagnostics.py")),
+        std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|d| d.join("python/gpu_diagnostics.py"))),
+        Some(
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("python/gpu_diagnostics.py"),
+        ),
+    ];
+
+    let script = locations
+        .into_iter()
+        .flatten()
+        .find(|p| p.exists())
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_else(|| "python/gpu_diagnostics.py".to_string());
+
+    let mut cmd = Command::new(&python_bin);
+    for arg in &python_prefix {
+        cmd.arg(arg);
+    }
+    let output = cmd
+        .arg(&script)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .creation_flags(0x08000000)
+        .output()
+        .map_err(|e| format!("Failed to run diagnostics: {}", e))?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    serde_json::from_str::<Value>(stdout.trim())
+        .map_err(|e| format!("Invalid diagnostics JSON: {} — output: {}", e, stdout))
+}
+
+#[tauri::command]
+fn run_pip_install(package: String) -> Result<String, String> {
+    let (python_bin, python_prefix) = find_python_312();
+
+    let mut cmd = Command::new(&python_bin);
+    for arg in &python_prefix {
+        cmd.arg(arg);
+    }
+    let output = cmd
+        .args(["-m", "pip", "install", "--force-reinstall", &package])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .creation_flags(0x08000000)
+        .output()
+        .map_err(|e| format!("pip install failed: {}", e))?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+    let combined = format!("{}\n{}", stdout, stderr);
+
+    if output.status.success() {
+        Ok(combined)
+    } else {
+        Err(format!("pip install failed:\n{}", combined))
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -215,6 +301,9 @@ pub fn run() {
             send_to_worker,
             get_gpu_info,
             list_dir_images,
+            copy_file,
+            run_gpu_diagnostics,
+            run_pip_install,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

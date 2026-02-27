@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type Page = "queue" | "editor" | "models" | "settings" | "about";
+export type Page = "queue" | "editor" | "models" | "settings" | "diagnostics" | "about";
 export type ProcessingState = "idle" | "processing" | "paused" | "stopped";
 export type QualityPreset = "fast" | "balanced" | "quality" | "anime" | "portrait";
 
@@ -25,7 +25,19 @@ export interface GPUInfo {
   driver: string;
 }
 
+export interface EditorFile {
+  id: string;
+  path: string;
+  name: string;
+  beforeSrc: string;
+  afterSrc: string | null;
+  outputPath: string | null;
+  processing: boolean;
+}
+
 export interface EditorState {
+  files: EditorFile[];
+  activeIndex: number;
   beforeSrc: string | null;
   afterSrc: string | null;
   tool: "erase" | "restore";
@@ -101,6 +113,11 @@ interface AppState {
   // Editor
   editor: EditorState;
   setEditor: (update: Partial<EditorState>) => void;
+  addEditorFiles: (files: EditorFile[]) => void;
+  removeEditorFile: (id: string) => void;
+  clearEditorFiles: () => void;
+  setActiveEditorIndex: (i: number) => void;
+  updateEditorFile: (id: string, update: Partial<EditorFile>) => void;
 
   // Worker
   workerReady: boolean;
@@ -120,6 +137,10 @@ interface AppState {
   setEulaAccepted: (accepted: boolean) => void;
   showFirstRun: boolean;
   setShowFirstRun: (show: boolean) => void;
+
+  // Diagnostics
+  hasGpuWarning: boolean;
+  setHasGpuWarning: (v: boolean) => void;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -193,6 +214,8 @@ export const useStore = create<AppState>((set) => ({
 
   // Editor
   editor: {
+    files: [],
+    activeIndex: 0,
     beforeSrc: null,
     afterSrc: null,
     tool: "erase",
@@ -206,6 +229,60 @@ export const useStore = create<AppState>((set) => ({
     redoStack: [],
   },
   setEditor: (update) => set((s) => ({ editor: { ...s.editor, ...update } })),
+  addEditorFiles: (files) => set((s) => {
+    const newFiles = [...s.editor.files, ...files];
+    const activeIndex = s.editor.files.length === 0 ? 0 : s.editor.activeIndex;
+    const active = newFiles[activeIndex];
+    return {
+      editor: {
+        ...s.editor,
+        files: newFiles,
+        activeIndex,
+        beforeSrc: active?.beforeSrc ?? null,
+        afterSrc: active?.afterSrc ?? null,
+      },
+    };
+  }),
+  removeEditorFile: (id) => set((s) => {
+    const newFiles = s.editor.files.filter((f) => f.id !== id);
+    const activeIndex = Math.min(s.editor.activeIndex, Math.max(0, newFiles.length - 1));
+    const active = newFiles[activeIndex];
+    return {
+      editor: {
+        ...s.editor,
+        files: newFiles,
+        activeIndex,
+        beforeSrc: active?.beforeSrc ?? null,
+        afterSrc: active?.afterSrc ?? null,
+      },
+    };
+  }),
+  clearEditorFiles: () => set((s) => ({
+    editor: { ...s.editor, files: [], activeIndex: 0, beforeSrc: null, afterSrc: null },
+  })),
+  setActiveEditorIndex: (i) => set((s) => {
+    const active = s.editor.files[i];
+    return {
+      editor: {
+        ...s.editor,
+        activeIndex: i,
+        beforeSrc: active?.beforeSrc ?? null,
+        afterSrc: active?.afterSrc ?? null,
+      },
+    };
+  }),
+  updateEditorFile: (id, update) => set((s) => {
+    const newFiles = s.editor.files.map((f) => (f.id === id ? { ...f, ...update } : f));
+    const active = newFiles[s.editor.activeIndex];
+    return {
+      editor: {
+        ...s.editor,
+        files: newFiles,
+        beforeSrc: active?.beforeSrc ?? null,
+        afterSrc: active?.afterSrc ?? null,
+      },
+    };
+  }),
 
   // Worker
   workerReady: false,
@@ -233,4 +310,8 @@ export const useStore = create<AppState>((set) => ({
   setEulaAccepted: (accepted) => set({ eulaAccepted: accepted }),
   showFirstRun: false,
   setShowFirstRun: (show) => set({ showFirstRun: show }),
+
+  // Diagnostics
+  hasGpuWarning: false,
+  setHasGpuWarning: (v) => set({ hasGpuWarning: v }),
 }));

@@ -11,14 +11,15 @@ import { useWorker } from "../hooks/useWorker";
 import { Button } from "../components/ui/Button";
 import { Select } from "../components/ui/Select";
 import { Toggle } from "../components/ui/Toggle";
+import { Tooltip } from "../components/ui/Tooltip";
 import { isVideoFile, IMAGE_EXTENSIONS, VIDEO_EXTENSIONS } from "../lib/presets";
 
-const QUALITY_OPTIONS: { value: QualityPreset; label: string }[] = [
-  { value: "fast", label: "Fast" },
-  { value: "balanced", label: "Balanced" },
-  { value: "quality", label: "Quality" },
-  { value: "anime", label: "Anime" },
-  { value: "portrait", label: "Portrait" },
+const QUALITY_OPTIONS: { value: QualityPreset; label: string; tooltip: string; detail: string }[] = [
+  { value: "fast", label: "Fast", tooltip: "Schnellstes Modell.", detail: "Gut für einfache Motive mit klarem Kontrast." },
+  { value: "balanced", label: "Balanced", tooltip: "Ausgewogene Geschwindigkeit und Qualität.", detail: "Empfohlen für die meisten Bilder." },
+  { value: "quality", label: "Quality", tooltip: "BiRefNet — bestes Modell.", detail: "Für Haare, Fell und komplexe Kanten." },
+  { value: "anime", label: "Anime", tooltip: "Optimiert für Illustrationen.", detail: "Anime, Manga und Tierfotografie." },
+  { value: "portrait", label: "Portrait", tooltip: "Speziell für Personenfotos.", detail: "Erkennt Haare und Haut präzise." },
 ];
 
 const PLATFORM_OPTIONS = [
@@ -88,6 +89,8 @@ export function QueuePage() {
   const skipProcessed = useStore((s) => s.skipProcessed);
   const setSkipProcessed = useStore((s) => s.setSkipProcessed);
   const addToast = useStore((s) => s.addToast);
+  const setProvider = useStore((s) => s.setProvider);
+  const setIsGpu = useStore((s) => s.setIsGpu);
 
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -193,6 +196,10 @@ export function QueuePage() {
           const elapsed = res.data?.elapsed as number | undefined;
           const skipped = res.data?.skipped as boolean | undefined;
           const outputPath = res.data?.output as string | undefined;
+          const providerLabel = res.data?.provider as string | undefined;
+          const isGpuResult = res.data?.is_gpu as boolean | undefined;
+          if (providerLabel) setProvider(providerLabel);
+          if (isGpuResult !== undefined) setIsGpu(isGpuResult);
           updateQueueItem(item.id, {
             status: skipped ? "skipped" : "done",
             elapsed: elapsed ?? 0,
@@ -240,12 +247,88 @@ export function QueuePage() {
 
   return (
     <div
-      className="h-full flex flex-col p-4 gap-3"
+      className="h-full flex flex-col gap-3"
+      style={{ padding: 20 }}
       onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
       onDragLeave={() => setIsDragOver(false)}
       onDrop={(e) => { e.preventDefault(); setIsDragOver(false); }}
     >
-      {/* Drop zone */}
+      {/* Toolbar — ALWAYS visible */}
+      <div className="flex items-center gap-2 flex-wrap px-2 rounded-lg shrink-0"
+        style={{ height: 48, background: "rgba(255,255,255,0.02)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+        <Button size="sm" icon={<Upload size={14} />} onClick={handleBrowseFiles}>
+          {t("file_select")}
+        </Button>
+        <Button size="sm" icon={<FolderPlus size={14} />} onClick={handleBrowseFolder}>
+          {t("add_folder")}
+        </Button>
+        {queue.length > 0 && (
+          <Button size="sm" variant="ghost" onClick={clearQueue}>
+            {t("clear_queue")}
+          </Button>
+        )}
+
+        <div className="w-px h-5 bg-void-600 mx-1" />
+
+        {queue.length > 0 && (
+          <>
+            <Button size="sm" variant="ghost"
+              onClick={() => hasSelected ? deselectAll() : selectAll()}>
+              {hasSelected ? t("deselect_all") : t("select_all")}
+            </Button>
+            {hasSelected && (
+              <Button size="sm" variant="ghost" icon={<Trash2 size={14} />}
+                onClick={() => removeFromQueue(selectedIds)}>
+                {t("remove_selected")}
+              </Button>
+            )}
+
+            <div className="w-px h-5 bg-void-600 mx-1" />
+
+            <Select
+              value="name"
+              options={SORT_OPTIONS}
+              onChange={(v) => sortQueue(v as "name" | "size" | "folder")}
+            />
+          </>
+        )}
+
+        <Tooltip content="Verarbeitete überspringen" detail="Bilder die bereits verarbeitet wurden werden ignoriert." position="bottom">
+          <Toggle
+            label={t("skip_existing")}
+            checked={skipProcessed}
+            onChange={setSkipProcessed}
+          />
+        </Tooltip>
+      </div>
+
+      {/* Quality + Platform presets — ALWAYS visible */}
+      <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2">
+          {QUALITY_OPTIONS.map((opt) => (
+            <Tooltip key={opt.value} content={opt.tooltip} detail={opt.detail} position="bottom">
+              <button
+                onClick={() => setQualityPreset(opt.value)}
+                className={`px-3 rounded-md font-medium transition-colors
+                  ${qualityPreset === opt.value
+                    ? "bg-honey-500/20 text-honey-300 border border-honey-500/40"
+                    : "text-honey-600 hover:text-honey-400 border border-transparent"
+                  }`}
+                style={{ height: 30, fontSize: 13, borderRadius: 6 }}
+              >
+                {opt.label}
+              </button>
+            </Tooltip>
+          ))}
+        </div>
+        <Select
+          value={platformPreset}
+          options={PLATFORM_OPTIONS}
+          onChange={setPlatformPreset}
+        />
+      </div>
+
+      {/* Content area */}
       {queue.length === 0 ? (
         <motion.button
           onClick={handleBrowseFiles}
@@ -265,189 +348,128 @@ export function QueuePage() {
           <p className="text-honey-800 text-[11px] italic">{t("empty_tip")}</p>
         </motion.button>
       ) : (
-        <>
-          {/* Toolbar */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button size="sm" icon={<Upload size={14} />} onClick={handleBrowseFiles}>
-              {t("file_select")}
-            </Button>
-            <Button size="sm" icon={<FolderPlus size={14} />} onClick={handleBrowseFolder}>
-              {t("add_folder")}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={clearQueue}>
-              {t("clear_queue")}
-            </Button>
-
-            <div className="w-px h-5 bg-void-600 mx-1" />
-
-            <Button size="sm" variant="ghost"
-              onClick={() => hasSelected ? deselectAll() : selectAll()}>
-              {hasSelected ? t("deselect_all") : t("select_all")}
-            </Button>
-            {hasSelected && (
-              <Button size="sm" variant="ghost" icon={<Trash2 size={14} />}
-                onClick={() => removeFromQueue(selectedIds)}>
-                {t("remove_selected")}
-              </Button>
-            )}
-
-            <div className="w-px h-5 bg-void-600 mx-1" />
-
-            <Select
-              value="name"
-              options={SORT_OPTIONS}
-              onChange={(v) => sortQueue(v as "name" | "size" | "folder")}
-            />
-
-            <Toggle
-              label={t("skip_existing")}
-              checked={skipProcessed}
-              onChange={setSkipProcessed}
-            />
-          </div>
-
-          {/* Quality + Platform presets */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              {QUALITY_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => setQualityPreset(opt.value)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
-                    ${qualityPreset === opt.value
-                      ? "bg-honey-500/20 text-honey-300 border border-honey-500/40"
-                      : "text-honey-600 hover:text-honey-400 border border-transparent"
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid grid-cols-5 gap-3">
+            <AnimatePresence mode="popLayout">
+              {queue.map((item) => (
+                <motion.div
+                  key={item.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  onClick={() => toggleSelectItem(item.id)}
+                  className={`relative group overflow-hidden cursor-pointer
+                    border transition-all
+                    ${item.selected
+                      ? "border-honey-400 bg-honey-500/10"
+                      : "border-[rgba(255,255,255,0.06)] hover:border-[rgba(245,158,11,0.3)] hover:shadow-[0_0_16px_rgba(245,158,11,0.08)]"
                     }`}
+                  style={{ width: 160, height: 170, borderRadius: 12, background: "rgba(20,20,32,0.8)", padding: 8 }}
                 >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-            <Select
-              value={platformPreset}
-              options={PLATFORM_OPTIONS}
-              onChange={setPlatformPreset}
-            />
-          </div>
-
-          {/* Thumbnail grid */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="grid grid-cols-5 gap-2">
-              <AnimatePresence mode="popLayout">
-                {queue.map((item) => (
-                  <motion.div
-                    key={item.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    onClick={() => toggleSelectItem(item.id)}
-                    className={`relative group rounded-lg overflow-hidden cursor-pointer
-                      border transition-colors
-                      ${item.selected
-                        ? "border-honey-400 bg-honey-500/10"
-                        : "border-void-600 bg-void-800/50 hover:border-void-500"
-                      }`}
-                    style={{ width: 140, height: 160 }}
+                  {/* Thumbnail */}
+                  <div className="w-full h-[110px] flex items-center justify-center"
+                    style={item.thumbnail ? {
+                      backgroundImage: 'repeating-conic-gradient(#1a1a2e 0% 25%, #252540 0% 50%)',
+                      backgroundSize: '16px 16px',
+                    } : undefined}
                   >
-                    {/* Thumbnail */}
-                    <div className="w-full h-[110px] flex items-center justify-center"
-                      style={item.thumbnail ? {
-                        backgroundImage: 'repeating-conic-gradient(#1a1a2e 0% 25%, #252540 0% 50%)',
-                        backgroundSize: '16px 16px',
-                      } : undefined}
-                    >
-                      {item.thumbnail ? (
-                        <img
-                          src={item.thumbnail}
-                          alt={item.name}
-                          className="w-full h-full object-contain"
-                          loading="lazy"
-                        />
-                      ) : item.type === "video" ? (
-                        <Film size={28} className="text-void-500" />
-                      ) : (
-                        <Image size={28} className="text-void-500" />
-                      )}
-                    </div>
+                    {item.thumbnail ? (
+                      <img
+                        src={item.thumbnail}
+                        alt={item.name}
+                        className="w-full h-full object-contain"
+                        loading="lazy"
+                      />
+                    ) : item.type === "video" ? (
+                      <Film size={28} className="text-void-500" />
+                    ) : (
+                      <Image size={28} className="text-void-500" />
+                    )}
+                  </div>
 
-                    {/* Type badge */}
-                    <div className={`absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[9px]
-                      font-bold uppercase
-                      ${item.type === "video"
-                        ? "bg-purple-500/80 text-white"
-                        : "bg-honey-500/80 text-void-900"
-                      }`}>
-                      {item.type === "video" ? "VID" : "IMG"}
-                    </div>
+                  {/* Type badge */}
+                  <div className={`absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[9px]
+                    font-bold uppercase
+                    ${item.type === "video"
+                      ? "bg-purple-500/80 text-white"
+                      : "bg-honey-500/80 text-void-900"
+                    }`}>
+                    {item.type === "video" ? "VID" : "IMG"}
+                  </div>
 
-                    {/* Info bar */}
-                    <div className="p-1.5">
-                      <p className="text-[10px] text-honey-300 truncate">{item.name}</p>
-                      <p className={`text-[9px] mt-0.5 ${
-                        item.status === "done" ? "text-green-400" :
-                        item.status === "error" ? "text-red-400" :
-                        item.status === "processing" ? "text-yellow-400" :
-                        item.status === "skipped" ? "text-honey-700" :
-                        "text-honey-700"
-                      }`}>
-                        {item.status === "done" && `✓ Done ${item.elapsed ? `${item.elapsed}s` : ""}`}
-                        {item.status === "error" && "✗ Failed"}
-                        {item.status === "processing" && "⏳ Processing…"}
-                        {item.status === "skipped" && "⏭ Skipped"}
-                        {item.status === "pending" && "Pending"}
-                        {item.status === "paused" && "⏸ Paused"}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
+                  {/* Info bar */}
+                  <div className="pt-1.5">
+                    <p className="text-[13px] text-[#A0A0C0] truncate">{item.name}</p>
+                    <p className={`text-[11px] mt-0.5 ${
+                      item.status === "done" ? "text-green-400" :
+                      item.status === "error" ? "text-red-400" :
+                      item.status === "processing" ? "text-yellow-400" :
+                      item.status === "skipped" ? "text-honey-700" :
+                      "text-honey-700"
+                    }`}>
+                      {item.status === "done" && `✓ Done ${item.elapsed ? `${item.elapsed}s` : ""}`}
+                      {item.status === "error" && "✗ Failed"}
+                      {item.status === "processing" && "⏳ Processing…"}
+                      {item.status === "skipped" && "⏭ Skipped"}
+                      {item.status === "pending" && "Pending"}
+                      {item.status === "paused" && "⏸ Paused"}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
-
-          {/* Progress bar */}
-          {processingState !== "idle" && (
-            <div className="w-full h-1.5 bg-void-700 rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-honey-500 rounded-full"
-                animate={{ width: `${progress * 100}%` }}
-                transition={{ duration: 0.3 }}
-              />
-            </div>
-          )}
-
-          {/* Action bar */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant="primary"
-              size="lg"
-              icon={<Play size={18} />}
-              onClick={handleStart}
-              disabled={processingState === "processing" || queue.length === 0}
-            >
-              {t("btn_start")}
-            </Button>
-            <Button
-              variant="secondary"
-              size="lg"
-              icon={<Pause size={18} />}
-              onClick={handlePause}
-              disabled={processingState === "idle" || processingState === "stopped"}
-            >
-              {processingState === "paused" ? t("btn_resume") : t("btn_pause")}
-            </Button>
-            <Button
-              variant="danger"
-              size="lg"
-              icon={<Square size={18} />}
-              onClick={handleStop}
-              disabled={processingState === "idle" || processingState === "stopped"}
-            >
-              {t("btn_stop")}
-            </Button>
-          </div>
-        </>
+        </div>
       )}
+
+      {/* Progress bar — ALWAYS visible when processing */}
+      {processingState !== "idle" && (
+        <div className="w-full h-1.5 bg-void-700 rounded-full overflow-hidden shrink-0">
+          <motion.div
+            className="h-full bg-honey-500 rounded-full"
+            animate={{ width: `${progress * 100}%` }}
+            transition={{ duration: 0.3 }}
+          />
+        </div>
+      )}
+
+      {/* Action bar — ALWAYS visible */}
+      <div className="flex items-center gap-3 shrink-0">
+        <Tooltip content="Startet die Verarbeitung" detail="Alle Bilder in der Warteschlange werden verarbeitet." position="top">
+          <Button
+            variant="primary"
+            size="lg"
+            icon={<Play size={18} />}
+            onClick={handleStart}
+            disabled={processingState === "processing" || queue.length === 0}
+          >
+            {t("btn_start")}
+          </Button>
+        </Tooltip>
+        <Tooltip content="Pausiert nach dem aktuellen Bild." detail="Kann fortgesetzt werden." position="top">
+          <Button
+            variant="secondary"
+            size="lg"
+            icon={<Pause size={18} />}
+            onClick={handlePause}
+            disabled={processingState === "idle" || processingState === "stopped"}
+          >
+            {processingState === "paused" ? t("btn_resume") : t("btn_pause")}
+          </Button>
+        </Tooltip>
+        <Tooltip content="Stoppt sofort." detail="Bricht die Verarbeitung ab." position="top">
+          <Button
+            variant="danger"
+            size="lg"
+            icon={<Square size={18} />}
+            onClick={handleStop}
+            disabled={processingState === "idle" || processingState === "stopped"}
+          >
+            {t("btn_stop")}
+          </Button>
+        </Tooltip>
+      </div>
     </div>
   );
 }

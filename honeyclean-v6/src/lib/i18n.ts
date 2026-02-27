@@ -9,6 +9,7 @@ const STRINGS: Translations = {
   nav_settings: { en: "Settings", de: "Einstellungen", fr: "Paramètres", es: "Ajustes", zh: "设置" },
   nav_about: { en: "About", de: "Über", fr: "À propos", es: "Acerca de", zh: "关于" },
   nav_models: { en: "Models", de: "Modelle", fr: "Modèles", es: "Modelos", zh: "模型" },
+  nav_diagnostics: { en: "Diagnostics", de: "Diagnose", fr: "Diagnostics", es: "Diagnóstico", zh: "诊断" },
   eula_title: { en: "Terms of Use", de: "Nutzungsbedingungen", fr: "Conditions d'utilisation", es: "Términos de uso", zh: "使用条款" },
   eula_language: { en: "Language", de: "Sprache", fr: "Langue", es: "Idioma", zh: "语言" },
   eula_checkbox: { en: "I have read and agree to the terms of use", de: "Ich habe die Nutzungsbedingungen gelesen und stimme zu", fr: "J'ai lu et j'accepte les conditions d'utilisation", es: "He leído y acepto los términos de uso", zh: "我已阅读并同意使用条款" },
@@ -195,6 +196,18 @@ const STRINGS: Translations = {
   preset_portrait: { en: "Portrait", de: "Porträt", fr: "Portrait", es: "Retrato", zh: "肖像" },
   // Decontaminate
   color_decontaminate: { en: "Color Decontamination", de: "Farbentfernung", fr: "Décontamination couleur", es: "Descontaminación de color", zh: "颜色去污" },
+  // Editor standalone
+  editor_drop_zone: { en: "Drop images here or click to browse", de: "Bilder hier ablegen oder klicken", fr: "Déposez les images ici ou cliquez", es: "Suelte imágenes aquí o haga clic", zh: "将图片拖放到此处或点击浏览" },
+  editor_add_files: { en: "Add Files", de: "Dateien hinzufügen", fr: "Ajouter des fichiers", es: "Agregar archivos", zh: "添加文件" },
+  editor_remove_bg: { en: "Remove BG", de: "HG entfernen", fr: "Supprimer le fond", es: "Quitar fondo", zh: "移除背景" },
+  editor_remove_bg_all: { en: "Remove All BG", de: "Alle HG entfernen", fr: "Supprimer tous les fonds", es: "Quitar todos los fondos", zh: "移除所有背景" },
+  editor_processing: { en: "Processing...", de: "Verarbeite...", fr: "Traitement...", es: "Procesando...", zh: "处理中..." },
+  editor_no_output: { en: "Process image first to compare", de: "Bild zuerst verarbeiten", fr: "Traitez d'abord l'image", es: "Procese la imagen primero", zh: "先处理图片再比较" },
+  editor_save_success: { en: "Saved successfully", de: "Erfolgreich gespeichert", fr: "Enregistré avec succès", es: "Guardado exitosamente", zh: "保存成功" },
+  editor_models: { en: "Models", de: "Modelle", fr: "Modèles", es: "Modelos", zh: "模型" },
+  editor_download_all: { en: "Download All Models", de: "Alle Modelle laden", fr: "Télécharger tous", es: "Descargar todos", zh: "下载所有模型" },
+  editor_models_ready: { en: "{count} models ready", de: "{count} Modelle bereit", fr: "{count} modèles prêts", es: "{count} modelos listos", zh: "{count}个模型就绪" },
+  editor_gpu_only: { en: "GPU Only", de: "Nur GPU", fr: "GPU uniquement", es: "Solo GPU", zh: "仅GPU" },
 };
 
 let currentLang: Language = "en";

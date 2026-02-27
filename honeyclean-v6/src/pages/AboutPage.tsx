@@ -5,24 +5,41 @@ export function AboutPage() {
   const { t } = useI18n();
 
   return (
-    <div className="h-full flex items-center justify-center p-8">
+    <div className="h-full flex items-center justify-center" style={{ padding: 20 }}>
       <div className="text-center space-y-6 max-w-md">
-        {/* Logo placeholder */}
-        <div className="w-20 h-20 mx-auto rounded-2xl bg-honey-500/20 border border-honey-500/30
-          flex items-center justify-center">
-          <span className="text-3xl font-heading font-bold text-honey-400">HC</span>
+        {/* Amber hexagon logo */}
+        <div className="mx-auto flex items-center justify-center" style={{ width: 80, height: 80 }}>
+          <svg viewBox="0 0 100 100" width="80" height="80">
+            <polygon
+              points="50,2 93,25 93,75 50,98 7,75 7,25"
+              fill="rgba(245,158,11,0.12)"
+              stroke="rgba(245,158,11,0.35)"
+              strokeWidth="2"
+            />
+            <text
+              x="50" y="56"
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill="#F59E0B"
+              fontFamily="'Space Grotesk', system-ui, sans-serif"
+              fontWeight="700"
+              fontSize="28"
+            >
+              HC
+            </text>
+          </svg>
         </div>
 
         <div>
-          <h1 className="text-2xl font-heading font-bold text-honey-300">
+          <h1 className="font-heading font-bold text-honey-300" style={{ fontSize: 26 }}>
             {t("app_title")}
           </h1>
-          <p className="text-sm text-honey-500 mt-1">
+          <p className="text-honey-500 mt-1" style={{ fontSize: 14 }}>
             {t("about_tagline")}
           </p>
         </div>
 
-        <div className="space-y-2 text-sm">
+        <div className="space-y-2" style={{ fontSize: 14 }}>
           <div className="flex items-center justify-center gap-2 text-honey-400">
             <span className="text-honey-600">{t("about_version")}:</span>
             <span className="font-mono">6.0</span>
@@ -41,12 +58,15 @@ export function AboutPage() {
           href="https://github.com/Zayn1312/HoneyClean"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg
-            bg-void-700 hover:bg-void-600 text-honey-400 text-sm
-            transition-colors border border-void-500"
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg
+            text-void-900 font-medium transition-all hover:brightness-110"
+          style={{
+            fontSize: 14,
+            background: "linear-gradient(135deg, #F59E0B, #D97706)",
+          }}
         >
-          <ExternalLink size={14} />
-          {t("about_github")}
+          <ExternalLink size={15} />
+          Star on GitHub
         </a>
 
         <p className="text-xs text-honey-800">

@@ -1,33 +1,22 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
-interface Point {
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+interface TrailPoint {
   x: number;
   y: number;
-  alpha: number;
+  time: number;
 }
 
 export function HoneyCursor() {
-  const [pos, setPos] = useState({ x: -100, y: -100 });
-  const lerpPos = useRef({ x: -100, y: -100 });
-  const trail = useRef<Point[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rafRef = useRef<number>(0);
-
-  useEffect(() => {
-    const handleMove = (e: MouseEvent) => {
-      setPos({ x: e.clientX, y: e.clientY });
-      trail.current.push({ x: e.clientX, y: e.clientY, alpha: 1 });
-      if (trail.current.length > 12) trail.current.shift();
-    };
-
-    window.addEventListener("mousemove", handleMove, { passive: true });
-    document.body.style.cursor = "none";
-
-    return () => {
-      window.removeEventListener("mousemove", handleMove);
-      document.body.style.cursor = "";
-    };
-  }, []);
+  const mouse = useRef({ x: -100, y: -100 });
+  const ringPos = useRef({ x: -100, y: -100 });
+  const trail = useRef<TrailPoint[]>([]);
+  const hovering = useRef(false);
+  const clicking = useRef(false);
+  const clickScale = useRef(1);
+  const rafRef = useRef(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -40,38 +29,87 @@ export function HoneyCursor() {
       canvas.height = window.innerHeight;
     };
     resize();
+
+    const onMove = (e: MouseEvent) => {
+      mouse.current = { x: e.clientX, y: e.clientY };
+      trail.current.push({ x: e.clientX, y: e.clientY, time: Date.now() });
+      if (trail.current.length > 8) trail.current.shift();
+    };
+
+    const onDown = () => {
+      clicking.current = true;
+      clickScale.current = 0.7;
+    };
+
+    const onUp = () => {
+      clicking.current = false;
+    };
+
+    const checkHover = (e: MouseEvent) => {
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      if (!el) { hovering.current = false; return; }
+      const tag = el.tagName.toLowerCase();
+      hovering.current = tag === "button" || tag === "a" ||
+        el.closest("button") !== null || el.closest("a") !== null ||
+        el.getAttribute("role") === "button" ||
+        getComputedStyle(el).cursor === "pointer";
+    };
+
+    window.addEventListener("mousemove", onMove, { passive: true });
+    window.addEventListener("mousemove", checkHover, { passive: true });
+    window.addEventListener("mousedown", onDown);
+    window.addEventListener("mouseup", onUp);
     window.addEventListener("resize", resize);
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Lerp cursor position
-      lerpPos.current.x += (pos.x - lerpPos.current.x) * 0.15;
-      lerpPos.current.y += (pos.y - lerpPos.current.y) * 0.15;
-      const { x, y } = lerpPos.current;
+      const { x: mx, y: my } = mouse.current;
 
-      // Draw trail
+      // Ring lerps to mouse with lag
+      ringPos.current.x = lerp(ringPos.current.x, mx, 0.12);
+      ringPos.current.y = lerp(ringPos.current.y, my, 0.12);
+      const rx = ringPos.current.x;
+      const ry = ringPos.current.y;
+
+      // Click scale spring back
+      clickScale.current = lerp(clickScale.current, 1, 0.15);
+
+      const now = Date.now();
+
+      // Draw trail — last 8 positions, fading over 400ms
       for (const point of trail.current) {
-        point.alpha *= 0.92;
-        if (point.alpha > 0.02) {
-          ctx.beginPath();
-          ctx.arc(point.x, point.y, 3, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(217, 163, 60, ${point.alpha * 0.5})`;
-          ctx.fill();
-        }
+        const age = now - point.time;
+        if (age > 400) continue;
+        const alpha = (1 - age / 400) * 0.3;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(217, 163, 60, ${alpha})`;
+        ctx.fill();
       }
-      trail.current = trail.current.filter((p) => p.alpha > 0.02);
+      trail.current = trail.current.filter((p) => now - p.time < 400);
 
-      // Inner circle
+      // Inner dot — follows mouse exactly, 6px diameter
       ctx.beginPath();
-      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.arc(mx, my, 3, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(217, 163, 60, 0.9)";
       ctx.fill();
 
-      // Outer ring
+      // Outer ring — 24px diameter, lerped, with hover/click effects
+      const hoverScale = hovering.current ? 1.8 : 1;
+      const scale = hoverScale * clickScale.current;
+      const ringRadius = 12 * scale;
+
       ctx.beginPath();
-      ctx.arc(x, y, 16, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(217, 163, 60, 0.3)";
+      ctx.arc(rx, ry, ringRadius, 0, Math.PI * 2);
+
+      if (hovering.current) {
+        // Fill with 30% amber on hover
+        ctx.fillStyle = "rgba(217, 163, 60, 0.15)";
+        ctx.fill();
+      }
+
+      ctx.strokeStyle = "rgba(217, 163, 60, 0.4)";
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
@@ -82,15 +120,19 @@ export function HoneyCursor() {
 
     return () => {
       cancelAnimationFrame(rafRef.current);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mousemove", checkHover);
+      window.removeEventListener("mousedown", onDown);
+      window.removeEventListener("mouseup", onUp);
       window.removeEventListener("resize", resize);
     };
-  }, [pos]);
+  }, []);
 
   return (
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: 9999 }}
+      style={{ zIndex: 99999 }}
     />
   );
 }
