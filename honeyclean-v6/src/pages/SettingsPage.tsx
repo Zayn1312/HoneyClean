@@ -1,5 +1,5 @@
-import { useEffect, useCallback, useState, type ReactNode } from "react";
-import { Save, FolderOpen, Copy, Check, AlertTriangle } from "lucide-react";
+import { useEffect, useCallback, type ReactNode } from "react";
+import { Save, FolderOpen, AlertTriangle, Zap } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { useStore } from "../store/useStore";
 import { useI18n } from "../hooks/useI18n";
@@ -64,14 +64,7 @@ function GpuStatusCard({ provider, isGpu, gpuEnabled }: {
   isGpu: boolean;
   gpuEnabled: boolean;
 }) {
-  const [copied, setCopied] = useState(false);
-  const pipCmd = "pip install onnxruntime-gpu";
-
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(pipCmd);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, []);
+  const setShowGpuSetup = useStore((s) => s.setShowGpuSetup);
 
   // GPU is active and working
   if (isGpu) {
@@ -84,13 +77,13 @@ function GpuStatusCard({ provider, isGpu, gpuEnabled }: {
           <span className="text-xs text-green-500/70 ml-auto font-mono">{provider}</span>
         </div>
         <p className="text-xs text-green-500/60 mt-1">
-          Verarbeitung läuft auf der Grafikkarte — maximale Geschwindigkeit.
+          Verarbeitung laeuft auf der Grafikkarte — maximale Geschwindigkeit.
         </p>
       </div>
     );
   }
 
-  // GPU toggle is ON but provider is CPU — show fix instructions
+  // GPU toggle is ON but provider is CPU — offer automatic fix
   if (gpuEnabled && !isGpu) {
     return (
       <div className="mx-4 mb-3 p-3 rounded-lg border"
@@ -99,31 +92,20 @@ function GpuStatusCard({ provider, isGpu, gpuEnabled }: {
           <AlertTriangle size={14} className="text-amber-400" />
           <span className="text-sm font-medium text-amber-400">GPU aktiviert, aber CPU wird verwendet</span>
         </div>
-        <p className="text-xs text-honey-500 mb-2">
-          ONNX Runtime hat keinen GPU-Provider gefunden. Das passiert wenn <code className="text-honey-300 bg-void-700 px-1 rounded">onnxruntime-gpu</code> nicht installiert ist.
+        <p className="text-xs text-honey-500 mb-3">
+          GPU-Beschleunigung ist nicht korrekt eingerichtet. HoneyClean kann das automatisch beheben.
         </p>
-        <p className="text-xs text-honey-600 mb-2">
-          Öffne ein Terminal und führe diesen Befehl aus:
-        </p>
-        <div className="flex items-center gap-2">
-          <code className="flex-1 text-xs font-mono text-honey-300 bg-void-900 border border-void-600 rounded-md px-3 py-2">
-            {pipCmd}
-          </code>
-          <button
-            onClick={handleCopy}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors"
-            style={{
-              background: copied ? "rgba(34,197,94,0.15)" : "rgba(245,158,11,0.12)",
-              color: copied ? "#22c55e" : "#F59E0B",
-              border: `1px solid ${copied ? "rgba(34,197,94,0.3)" : "rgba(245,158,11,0.3)"}`,
-            }}
-          >
-            {copied ? <><Check size={12} /> Kopiert</> : <><Copy size={12} /> Kopieren</>}
-          </button>
-        </div>
-        <p className="text-[11px] text-honey-700 mt-2">
-          Nach der Installation HoneyClean neu starten. Benötigt NVIDIA GPU + CUDA Treiber.
-        </p>
+        <button
+          onClick={() => setShowGpuSetup(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          style={{
+            background: "rgba(245,158,11,0.12)",
+            color: "#F59E0B",
+            border: "1px solid rgba(245,158,11,0.3)",
+          }}
+        >
+          <Zap size={14} /> GPU jetzt einrichten
+        </button>
       </div>
     );
   }
@@ -137,7 +119,7 @@ function GpuStatusCard({ provider, isGpu, gpuEnabled }: {
         <span className="text-sm text-honey-600">GPU deaktiviert</span>
       </div>
       <p className="text-xs text-honey-700 mt-1">
-        Verarbeitung läuft auf der CPU. Aktiviere GPU für ~10x schnellere Verarbeitung.
+        Verarbeitung laeuft auf der CPU. Aktiviere GPU fuer ~10x schnellere Verarbeitung.
       </p>
     </div>
   );

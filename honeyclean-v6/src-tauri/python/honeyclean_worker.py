@@ -16,6 +16,9 @@ import os
 import re
 import sys
 import time
+
+# Emit Python version as first stdout line (Tauri reads this)
+print(json.dumps({"status": "startup", "python": sys.version, "executable": sys.executable}), flush=True)
 import shutil
 import base64
 import logging

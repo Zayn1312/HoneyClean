@@ -23,7 +23,21 @@ impl Default for WorkerState {
 type WorkerGuard = Mutex<WorkerState>;
 
 fn find_python_312() -> (String, Vec<String>) {
-    // Option 1: py launcher with -3.12 flag
+    // Hardcoded Python 3.12 paths — confirmed working with onnxruntime-gpu CUDA
+    let paths = vec![
+        r"C:\Users\anoua\AppData\Local\Programs\Python\Python312\python.exe",
+        r"C:\Python312\python.exe",
+        r"C:\Program Files\Python312\python.exe",
+    ];
+
+    for path in &paths {
+        if std::path::Path::new(path).exists() {
+            eprintln!("[HC] Python 3.12 found at: {}", path);
+            return (path.to_string(), vec![]);
+        }
+    }
+
+    // Fallback: try py -3.12
     if Command::new("py")
         .args(["-3.12", "--version"])
         .stdout(Stdio::piped())
@@ -33,14 +47,11 @@ fn find_python_312() -> (String, Vec<String>) {
         .map(|o| o.status.success())
         .unwrap_or(false)
     {
+        eprintln!("[HC] Using: py -3.12");
         return ("py".to_string(), vec!["-3.12".to_string()]);
     }
-    // Option 2: explicit path
-    let explicit = r"C:\Users\anoua\AppData\Local\Programs\Python\Python312\python.exe";
-    if std::path::Path::new(explicit).exists() {
-        return (explicit.to_string(), vec![]);
-    }
-    // Option 3: fallback (will be CPU mode)
+
+    eprintln!("[HC] WARNING: Python 3.12 not found, falling back to python (CPU mode)");
     ("python".to_string(), vec![])
 }
 
@@ -290,6 +301,113 @@ fn run_pip_install(package: String) -> Result<String, String> {
     }
 }
 
+fn find_python_312_exe() -> String {
+    let paths = vec![
+        r"C:\Users\anoua\AppData\Local\Programs\Python\Python312\python.exe",
+        r"C:\Python312\python.exe",
+        r"C:\Program Files\Python312\python.exe",
+    ];
+    for path in &paths {
+        if std::path::Path::new(path).exists() {
+            return path.to_string();
+        }
+    }
+    "py".to_string()
+}
+
+fn find_script(app: &AppHandle, name: &str) -> String {
+    let locations = vec![
+        app.path()
+            .resource_dir()
+            .ok()
+            .map(|p| p.join(format!("python/{}", name))),
+        std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|d| d.join(format!("python/{}", name)))),
+        Some(
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join(format!("python/{}", name)),
+        ),
+    ];
+    for loc in locations.into_iter().flatten() {
+        if loc.exists() {
+            return loc.to_string_lossy().to_string();
+        }
+    }
+    format!("python/{}", name)
+}
+
+#[tauri::command]
+async fn install_gpu_packages(
+    _app: AppHandle,
+    window: tauri::Window,
+) -> Result<String, String> {
+    let python = find_python_312_exe();
+    let packages = vec!["onnxruntime-gpu", "rembg[gpu]"];
+    let mut full_log = String::new();
+
+    for package in &packages {
+        let _ = window.emit(
+            "install-progress",
+            serde_json::json!({
+                "step": format!("Installiere {}...", package),
+                "package": package,
+            }),
+        );
+
+        let output = Command::new(&python)
+            .args(["-m", "pip", "install", "--upgrade", package])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .creation_flags(0x08000000)
+            .output()
+            .map_err(|e| format!("HC-INSTALL-001: {}", e))?;
+
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        full_log.push_str(&format!("\n=== {} ===\n{}\n{}", package, stdout, stderr));
+
+        if !output.status.success() {
+            return Err(format!("HC-INSTALL-002: pip install {} failed:\n{}", package, full_log));
+        }
+    }
+
+    Ok(full_log)
+}
+
+#[tauri::command]
+fn restart_app(app: AppHandle) {
+    tauri::process::restart(&app.env());
+}
+
+#[tauri::command]
+fn send_crash_email(
+    app: AppHandle,
+    error_id: String,
+    error_type: String,
+    message: String,
+    context: String,
+) -> Result<(), String> {
+    let python = find_python_312_exe();
+    let script = find_script(&app, "crash_mailer.py");
+
+    let payload = serde_json::json!({
+        "error_id": error_id,
+        "error_type": error_type,
+        "message": message,
+        "context": context,
+    });
+
+    std::thread::spawn(move || {
+        let _ = Command::new(&python)
+            .args([&script, &payload.to_string()])
+            .creation_flags(0x08000000)
+            .output();
+    });
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -304,6 +422,9 @@ pub fn run() {
             copy_file,
             run_gpu_diagnostics,
             run_pip_install,
+            install_gpu_packages,
+            restart_app,
+            send_crash_email,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,9 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   RefreshCw, AlertTriangle, CheckCircle, Info, XCircle,
-  Download, ExternalLink, Copy, Check, Terminal, X,
+  Download, ExternalLink, Terminal,
 } from "lucide-react";
 import { useStore } from "../store/useStore";
 import { Button } from "../components/ui/Button";
@@ -46,81 +47,6 @@ const SEVERITY = {
   ok: { icon: CheckCircle, color: "#22c55e", bg: "rgba(34,197,94,0.08)", border: "rgba(34,197,94,0.25)", label: "OK" },
 };
 
-// ── External instructions modal ──
-function ExternalModal({ issue, onClose, onReDiagnose }: {
-  issue: DiagIssue;
-  onClose: () => void;
-  onReDiagnose: () => void;
-}) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(issue.fix_command);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [issue.fix_command]);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-lg bg-void-800 border border-void-600 rounded-2xl shadow-2xl"
-        style={{ padding: 24 }}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-heading font-semibold text-honey-300">
-            Manueller Schritt erforderlich
-          </h3>
-          <button onClick={onClose} className="text-honey-700 hover:text-honey-400 transition-colors">
-            <X size={18} />
-          </button>
-        </div>
-
-        <p className="text-sm text-honey-400 mb-3">
-          Fuehre diesen Befehl in der Eingabeaufforderung aus:
-        </p>
-
-        <div className="flex items-center gap-2 mb-4">
-          <code className="flex-1 text-sm font-mono text-honey-200 bg-void-900 border border-void-600 rounded-lg px-4 py-3">
-            {issue.fix_command}
-          </code>
-          <button
-            onClick={handleCopy}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-lg text-sm font-medium transition-colors"
-            style={{
-              background: copied ? "rgba(34,197,94,0.15)" : "rgba(245,158,11,0.12)",
-              color: copied ? "#22c55e" : "#F59E0B",
-              border: `1px solid ${copied ? "rgba(34,197,94,0.3)" : "rgba(245,158,11,0.3)"}`,
-            }}
-          >
-            {copied ? <><Check size={14} /> Kopiert</> : <><Copy size={14} /> Kopieren</>}
-          </button>
-        </div>
-
-        <div className="text-xs text-honey-600 space-y-1 mb-5 p-3 rounded-lg"
-          style={{ background: "rgba(255,255,255,0.02)" }}>
-          <p>1. Windows-Taste + R druecken</p>
-          <p>2. "cmd" eingeben und Enter druecken</p>
-          <p>3. Befehl einfuegen (Strg+V) und Enter druecken</p>
-          <p>4. Warten bis die Installation abgeschlossen ist</p>
-        </div>
-
-        <div className="flex gap-3">
-          <Button variant="primary" size="sm" icon={<RefreshCw size={14} />}
-            onClick={() => { onClose(); onReDiagnose(); }}>
-            Fertig — Diagnose erneut starten
-          </Button>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            Schliessen
-          </Button>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
 // ── Main page ──
 export function DiagnosticsPage() {
   const addToast = useStore((s) => s.addToast);
@@ -130,7 +56,14 @@ export function DiagnosticsPage() {
   const [loading, setLoading] = useState(false);
   const [installing, setInstalling] = useState<string | null>(null);
   const [installLog, setInstallLog] = useState("");
-  const [externalIssue, setExternalIssue] = useState<DiagIssue | null>(null);
+  const logRef = useRef<HTMLPreElement>(null);
+
+  // Auto-scroll log
+  useEffect(() => {
+    if (logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
+    }
+  }, [installLog]);
 
   const runDiagnostics = useCallback(async () => {
     setLoading(true);
@@ -155,25 +88,39 @@ export function DiagnosticsPage() {
 
   const handleFix = useCallback(async (issue: DiagIssue) => {
     if (issue.fix_type === "pip_install") {
-      const pkg = issue.fix_command.replace(/^python -m pip install\s+/, "");
+      // Use automatic installer — no terminal needed
       setInstalling(issue.code);
       setInstallLog("");
+
+      const unlisten = await listen<{ step: string }>("install-progress", (event) => {
+        setInstallLog((prev) => prev + "\n" + event.payload.step);
+      });
+
       try {
-        const log = await invoke<string>("run_pip_install", { package: pkg });
+        const log = await invoke<string>("install_gpu_packages");
+        unlisten();
         setInstallLog(log);
         addToast("Installation abgeschlossen — starte HoneyClean neu", "success");
+
+        // Auto restart after 3 seconds
+        setTimeout(() => {
+          invoke("restart_app").catch(() => {});
+        }, 3000);
       } catch (e) {
+        unlisten();
         setInstallLog(String(e));
         addToast("Installation fehlgeschlagen", "error");
+
+        // Send crash report
+        invoke("send_crash_email", {
+          errorId: `HC-DIAG-${Date.now().toString(36).toUpperCase()}`,
+          errorType: "HC-INSTALL-002",
+          message: String(e),
+          context: "GPU fix from diagnostics page",
+        }).catch(() => {});
       }
       setInstalling(null);
-      // Re-run diagnostics automatically
       await runDiagnostics();
-    }
-
-    if (issue.fix_type === "external_command") {
-      navigator.clipboard.writeText(issue.fix_command);
-      setExternalIssue(issue);
     }
 
     if (issue.fix_type === "open_url") {
@@ -318,7 +265,7 @@ export function DiagnosticsPage() {
                             content={
                               issue.fix_type === "pip_install" ? "Automatisch installieren" :
                               issue.fix_type === "open_url" ? "Link oeffnen" :
-                              "Befehl kopieren"
+                              "Automatisch beheben"
                             }
                             position="left"
                           >
@@ -335,11 +282,11 @@ export function DiagnosticsPage() {
                               {isInstalling ? (
                                 <><RefreshCw size={12} className="animate-spin" /> Installiert...</>
                               ) : issue.fix_type === "pip_install" ? (
-                                <><Download size={12} /> Fix installieren</>
+                                <><Download size={12} /> Automatisch beheben</>
                               ) : issue.fix_type === "open_url" ? (
                                 <><ExternalLink size={12} /> Oeffnen</>
                               ) : (
-                                <><Copy size={12} /> Kopieren</>
+                                <><Download size={12} /> Beheben</>
                               )}
                             </button>
                           </Tooltip>
@@ -358,21 +305,13 @@ export function DiagnosticsPage() {
               <h3 className="text-xs uppercase tracking-wider text-honey-600 font-semibold mb-2 px-1">
                 Installations-Log
               </h3>
-              <pre className="text-xs font-mono text-honey-400 bg-void-900 border border-void-600 rounded-xl p-4 max-h-[200px] overflow-y-auto whitespace-pre-wrap">
+              <pre ref={logRef}
+                className="text-xs font-mono text-honey-400 bg-void-900 border border-void-600 rounded-xl p-4 max-h-[200px] overflow-y-auto whitespace-pre-wrap">
                 {installLog}
               </pre>
             </div>
           )}
         </>
-      )}
-
-      {/* External command modal */}
-      {externalIssue && (
-        <ExternalModal
-          issue={externalIssue}
-          onClose={() => setExternalIssue(null)}
-          onReDiagnose={runDiagnostics}
-        />
       )}
     </div>
   );

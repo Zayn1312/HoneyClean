@@ -9,6 +9,7 @@ import { Layout } from "./components/Layout";
 import { ToastContainer } from "./components/Toast";
 import { EulaModal } from "./components/EulaModal";
 import { FirstRunModal } from "./components/FirstRunModal";
+import { GpuSetupModal } from "./components/GpuSetupModal";
 import { QueuePage } from "./pages/QueuePage";
 import { EditorPage } from "./pages/EditorPage";
 import { ModelsPage } from "./pages/ModelsPage";
@@ -26,8 +27,9 @@ export default function App() {
   const setLanguage = useStore((s) => s.setLanguage);
   const workerReady = useStore((s) => s.workerReady);
   const setHasGpuWarning = useStore((s) => s.setHasGpuWarning);
-  const addToast = useStore((s) => s.addToast);
-  const setPage = useStore((s) => s.setPage);
+  const showGpuSetup = useStore((s) => s.showGpuSetup);
+  const setShowGpuSetup = useStore((s) => s.setShowGpuSetup);
+  const config = useStore((s) => s.config);
   const { send } = useWorker();
 
   // Poll GPU info
@@ -46,32 +48,37 @@ export default function App() {
     }).catch(() => {});
   }, [workerReady, send, setConfig, setLanguage, setEulaAccepted]);
 
-  // Auto-diagnose GPU on startup (silent)
+  // Auto-diagnose GPU on startup — show setup modal if CUDA missing
   useEffect(() => {
-    async function checkGPU() {
+    async function gpuSetupCheck() {
+      // Skip if user already decided
+      const declined = config.gpu_setup_declined as boolean | undefined;
+      const done = config.gpu_setup_done as boolean | undefined;
+      if (declined || done) return;
+
       try {
         const diag = await invoke<{
-          issues: { severity: string; title: string }[];
+          summary: { all_ok: boolean; critical: number };
+          issues: { severity: string; title: string; code: string }[];
         }>("run_gpu_diagnostics");
 
         const critical = diag.issues.filter((i) => i.severity === "critical");
+        setHasGpuWarning(critical.length > 0);
 
         if (critical.length > 0) {
-          setHasGpuWarning(true);
-          addToast(
-            `GPU-Problem: ${critical[0].title}`,
-            "warning",
-          );
-        } else {
-          setHasGpuWarning(false);
+          // Show the automatic setup modal
+          setShowGpuSetup(true);
         }
       } catch (e) {
         console.error("GPU diagnostics failed:", e);
       }
     }
 
-    checkGPU();
-  }, [setHasGpuWarning, addToast, setPage]);
+    // Wait for config to load before checking
+    if (workerReady && Object.keys(config).length > 0) {
+      gpuSetupCheck();
+    }
+  }, [workerReady, config, setHasGpuWarning, setShowGpuSetup]);
 
   return (
     <>
@@ -116,6 +123,10 @@ export default function App() {
             <AboutPage />
           </div>
         </Layout>
+      )}
+
+      {showGpuSetup && (
+        <GpuSetupModal onClose={() => setShowGpuSetup(false)} />
       )}
 
       <ToastContainer />

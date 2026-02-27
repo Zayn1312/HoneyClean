@@ -141,6 +141,8 @@ interface AppState {
   // Diagnostics
   hasGpuWarning: boolean;
   setHasGpuWarning: (v: boolean) => void;
+  showGpuSetup: boolean;
+  setShowGpuSetup: (v: boolean) => void;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -314,4 +316,6 @@ export const useStore = create<AppState>((set) => ({
   // Diagnostics
   hasGpuWarning: false,
   setHasGpuWarning: (v) => set({ hasGpuWarning: v }),
+  showGpuSetup: false,
+  setShowGpuSetup: (v) => set({ showGpuSetup: v }),
 }));
