@@ -142,17 +142,21 @@ export function QueuePage() {
       const folder = await open({
         multiple: false,
         directory: true,
+        recursive: true,
       });
       if (!folder) return;
-      const dirPath = Array.isArray(folder) ? folder[0] : folder;
+      const dirPath = typeof folder === "string" ? folder : folder[0];
+      console.log("[HoneyClean] Folder selected:", dirPath);
       const files = await invoke<string[]>("list_dir_images", { path: dirPath });
+      console.log("[HoneyClean] Found files:", files?.length);
       if (!files?.length) {
         addToast(t("no_images_found") || "No images found in folder", "warning");
         return;
       }
       addFilesToQueue(files);
     } catch (e) {
-      console.error("Folder pick failed:", e);
+      console.error("[HoneyClean] Folder pick failed:", e);
+      addToast(`Folder error: ${e}`, "error");
     }
   }, [addFilesToQueue, addToast, t]);
 
